@@ -52,7 +52,8 @@ type Message = {
 type Document = { id: string; name: string };
 type BenchSample = { ok: boolean; status: number | null; duration_ms: number; first_token_ms: number | null; output_tokens: number | null; prompt_tokens?: number | null; model_tokens_per_second?: number | null; error: string | null };
 type BenchResult = { scenario?: string; label?: string; concurrency: number; attempts: number; successes: number; failures: number; error_rate_pct?: number; elapsed_s: number; requests_per_second: number; output_tokens_per_second?: number; model_tokens_per_second_p50?: number | null; prompt_tokens_p50?: number | null; output_tokens_p50?: number | null; latency_ms: { p50: number | null; p95: number | null; max: number | null }; first_token_ms: { p50: number | null; p95: number | null }; samples: BenchSample[] };
-type Benchmark = { id: string; status: string; model: string; profile: string; mode?: string; current_stage?: string; stable_concurrency?: number; recommendation?: string; prompt: string; warmup?: BenchSample; results: BenchResult[]; error?: string };
+type BenchVerdict = { status: 'viable' | 'limited' | 'inconclusive'; headline: string; summary: string; concurrent_requests: number | null; request_rates: { scenario: string; label: string; p95_ms: number; measured_rpm: number; planning_rpm: number }[]; queue: null | { implemented: boolean; recommended_pending: number; estimated_max_wait_s: number; client_timeout_s: number; wait_budget_s: number; basis_p95_ms: number }; caveat?: string };
+type Benchmark = { id: string; status: string; model: string; profile: string; mode?: string; current_stage?: string; stable_concurrency?: number; recommendation?: string; verdict?: BenchVerdict; prompt: string; warmup?: BenchSample; results: BenchResult[]; error?: string };
 type BenchmarkSummary = { id: string; status: string; model: string; profile: string; started?: string };
 async function api(path: string, init?: RequestInit) {
   const response = await fetch("/api" + path, {
@@ -706,7 +707,22 @@ function App() {
               {benchmark.error && <p role="alert">{benchmark.error}</p>}
               {benchmark.current_stage && benchmark.status === 'running' && <p>Etapa atual: {benchmark.current_stage}</p>}
               {benchmark.warmup && <p>Aquecimento: {benchmark.warmup.ok ? `${benchmark.warmup.duration_ms} ms` : benchmark.warmup.error}</p>}
-              {benchmark.recommendation && <p className="benchmark-recommendation">{benchmark.recommendation}</p>}
+              {benchmark.verdict ? <section className={`benchmark-verdict ${benchmark.verdict.status}`} aria-label="Parecer final do diagnóstico">
+                <span className="verdict-eyebrow">Parecer final · {benchmark.model}</span>
+                <h4>{benchmark.verdict.headline}</h4>
+                <p>{benchmark.verdict.summary}</p>
+                {benchmark.verdict.queue && <>
+                  <div className="verdict-grid">
+                    <div><strong>{benchmark.verdict.concurrent_requests}</strong><span>chamadas curtas simultâneas aprovadas no teste</span></div>
+                    <div><strong>{benchmark.verdict.queue.recommended_pending}</strong><span>capacidade sugerida da fila, em pedidos; ainda não implementada</span></div>
+                    <div><strong>{benchmark.verdict.queue.client_timeout_s} s</strong><span>timeout sugerido para o cliente com a fila proposta</span></div>
+                  </div>
+                  <p className="verdict-queue">{benchmark.verdict.queue.recommended_pending ? `Com a fila sugerida cheia, a espera estimada chega a ${benchmark.verdict.queue.estimated_max_wait_s} s usando o p95 mais lento medido.` : 'O p95 mais lento já supera 30 s. Evite enfileirar até otimizar o serviço.'} Hoje a API não tem fila: chamadas excedentes podem receber HTTP 409.</p>
+                  <h5>Planejamento de chamadas por minuto</h5>
+                  <div className="benchmark-table-wrap"><table><thead><tr><th>Tipo de resposta</th><th>p95 medido</th><th>Ritmo sugerido</th></tr></thead><tbody>{benchmark.verdict.request_rates.map(row => <tr key={row.scenario}><td>{row.label}</td><td>{(row.p95_ms / 1000).toFixed(1)} s</td><td>até {row.planning_rpm.toLocaleString('pt-BR')} req./min</td></tr>)}</tbody></table></div>
+                </>}
+                {benchmark.verdict.caveat && <p className="verdict-caveat">{benchmark.verdict.caveat} Refaça o teste na VM Oracle; os números desta instalação não são transferíveis.</p>}
+              </section> : benchmark.recommendation && <p className="benchmark-recommendation">{benchmark.recommendation}</p>}
               {!!benchmark.results.length && <div className="benchmark-table-wrap"><table><thead><tr><th>Cenário</th><th>Simultâneas</th><th>Sucesso</th><th>Erros</th><th>Entrada/saída</th><th>TTFT p50/p95</th><th>Total p50/p95</th><th>Resp./s</th><th>Tokens/s</th></tr></thead><tbody>{benchmark.results.map((row,index) => <tr key={`${row.scenario || index}-${row.concurrency}`}><td>{row.label || row.scenario || 'Resposta'}</td><td>{row.concurrency}</td><td>{row.successes}/{row.attempts}</td><td>{row.error_rate_pct ?? Math.round(row.failures/row.attempts*100)}%</td><td>{row.prompt_tokens_p50 ?? '—'} / {row.output_tokens_p50 ?? '—'}</td><td>{row.first_token_ms.p50 ?? '—'} / {row.first_token_ms.p95 ?? '—'} ms</td><td>{row.latency_ms.p50 ?? '—'} / {row.latency_ms.p95 ?? '—'} ms</td><td>{row.requests_per_second}</td><td>{row.output_tokens_per_second ?? '—'}</td></tr>)}</tbody></table></div>}
               {benchmark.results.some(row => row.failures > 0) && <p className="benchmark-failures">HTTP 409 indica chamadas recusadas durante outra geração. As falhas não entram nos percentis.</p>}
               {benchmark.results.map((row,index) => <SourceList key={`${row.scenario || index}-${row.concurrency}`} label={`${row.label || row.scenario || 'Resposta'}: amostras individuais`}>{row.samples.map((sample,i) => <p key={i}>#{i+1} · HTTP {sample.status ?? 'rede'} · {sample.duration_ms} ms · {sample.output_tokens ?? '—'} tokens · {sample.model_tokens_per_second ?? '—'} tokens/s do modelo {sample.error ? `· ${sample.error}` : ''}</p>)}</SourceList>)}

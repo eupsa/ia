@@ -13,13 +13,63 @@ const scenarios = [
   { id: 'context', label: 'Contexto extenso', prompt: `${Array.from({length: 32}, (_, i) => `Registro ${i+1}: o serviço local usa autenticação por chave, mantém conversas no SQLite e executa um modelo Qwen3 no Ollama. `).join('')}\nResponda em uma frase: onde ficam armazenadas as conversas?`, repetitions: 3, max_tokens: 128 },
 ];
 const percentile = (values, p) => values.length ? Math.round([...values].sort((a,b) => a-b)[Math.ceil(values.length*p)-1]) : null;
+const planningScenarios = ['short', 'medium', 'long', 'context'];
+
+export function buildVerdict(job) {
+  const rows = planningScenarios.map(id => job.results.find(row => row.scenario === id && row.concurrency === 1));
+  const complete = rows.every(row => row && row.attempts > 0 && row.successes > 0 && row.latency_ms?.p95 > 0);
+  if (!complete) return {
+    status: 'inconclusive',
+    headline: 'Capacidade ainda não comprovada',
+    summary: 'Faltam respostas bem-sucedidas em um ou mais cenários. Confira o modelo e os serviços antes de dimensionar a API.',
+    request_rates: [],
+    concurrent_requests: null,
+    queue: null,
+  };
+  const capacity = Math.max(1, job.stable_concurrency || 1);
+  const short = rows[0];
+  const failures = rows.reduce((total, row) => total + row.failures, 0);
+  const attempts = rows.reduce((total, row) => total + row.attempts, 0);
+  const slowestP95 = Math.max(...rows.map(row => row.latency_ms.p95));
+  const overloaded = job.results.find(row => row.scenario === 'capacity' && row.failures > 0);
+  const request_rates = rows.map(row => {
+    const measuredRpm = Math.min(60000 / row.latency_ms.p95, row.requests_per_second * 60);
+    return {
+      scenario: row.scenario,
+      label: row.label,
+      p95_ms: row.latency_ms.p95,
+      measured_rpm: Math.round(measuredRpm * 10) / 10,
+      planning_rpm: Math.round(measuredRpm * 0.7 * 10) / 10,
+    };
+  });
+  const queued = Math.min(10, Math.floor(30000 / slowestP95) * capacity);
+  const waitMs = Math.ceil(queued / capacity) * slowestP95;
+  const status = failures === 0 && short.latency_ms.p95 <= 10000 ? 'viable' : 'limited';
+  return {
+    status,
+    headline: status === 'viable' ? 'Viável nesta instalação para uso leve' : 'Roda nesta instalação, com limites de desempenho',
+    summary: `${attempts - failures}/${attempts} respostas sequenciais concluídas; resposta curta com p95 de ${(short.latency_ms.p95 / 1000).toFixed(1)} s.${overloaded ? ` Com ${overloaded.concurrency} chamadas simultâneas, ${overloaded.failures}/${overloaded.attempts} falharam.` : ''} Este parecer mede capacidade, não qualidade das respostas.`,
+    concurrent_requests: capacity,
+    request_rates,
+    queue: {
+      implemented: false,
+      recommended_pending: queued,
+      estimated_max_wait_s: Math.ceil(waitMs / 1000),
+      client_timeout_s: Math.max(30, Math.ceil((waitMs + Math.max(slowestP95, job.warmup?.duration_ms || 0)) / 1000) + 10),
+      wait_budget_s: 30,
+      basis_p95_ms: slowestP95,
+    },
+    caveat: 'Estimativas de planejamento com 30% de folga, baseadas em poucas amostras e sem fila real. Valide novamente com o tráfego e o hardware de produção.',
+  };
+}
+
 export function createBenchmark({ fetcher = fetch, baseUrl = 'http://127.0.0.1:3000', apiKey = '', installed, db }) {
   const jobs = new Map();
   db.exec('CREATE TABLE IF NOT EXISTS benchmarks(id TEXT PRIMARY KEY,data TEXT NOT NULL)');
   const save = job => { jobs.set(job.id, job); db.prepare('INSERT OR REPLACE INTO benchmarks(id,data) VALUES(?,?)').run(job.id, JSON.stringify(job)); };
   const get = id => jobs.get(id) || JSON.parse(db.prepare('SELECT data FROM benchmarks WHERE id=?').get(id)?.data || 'null');
   const list = () => db.prepare('SELECT data FROM benchmarks ORDER BY rowid DESC LIMIT 20').all().map(row => { const job=JSON.parse(row.data); return { id: job.id, status: job.status, model: job.model, profile: job.mode === 'auto' ? 'auto' : job.profile, started: job.started, finished: job.finished }; });
-  for (const row of db.prepare('SELECT id,data FROM benchmarks').all()) { const job=JSON.parse(row.data); if (['running','pending'].includes(job.status)) { job.status='error'; job.error='Teste interrompido pelo reinício do backend.'; save(job); } }
+  for (const row of db.prepare('SELECT id,data FROM benchmarks').all()) { const job=JSON.parse(row.data); if (['running','pending'].includes(job.status)) { job.status='error'; job.error='Teste interrompido pelo reinício do backend.'; save(job); } else if (job.status === 'done' && job.mode === 'auto' && !job.verdict) { job.verdict=buildVerdict(job); save(job); } }
   async function request(model, prompt, maxTokens = null) {
     const setupStarted = performance.now(); let started = setupStarted, chatId;
     const headers = { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) };
@@ -86,6 +136,7 @@ export function createBenchmark({ fetcher = fetch, baseUrl = 'http://127.0.0.1:3
         }
         job.recommendation = stable === 1 ? 'Uma geração simultânea é o limite estável nesta configuração. Requisições excedentes podem receber HTTP 409; implemente uma fila antes de oferecer a API a vários sistemas.' : `Até ${stable} gerações simultâneas passaram nos critérios deste teste (até 5% de erros e p95 no máximo 2× a linha de base). Confirme com uma carga mais longa antes de dimensionar produção.`;
         job.stable_concurrency = stable;
+        job.verdict = buildVerdict(job);
       } else {
         for (const concurrency of job.concurrency) await measure({ scenario: job.profile, label: job.profile, prompt: prompts[job.profile], maxTokens: null, repetitions: job.repetitions, concurrency });
       }

@@ -445,6 +445,51 @@
     "current_stage": null,
     "recommendation": "Uma geração simultânea é o limite estável nesta configuração. Requisições excedentes podem receber HTTP 409; implemente uma fila antes de oferecer a API a vários sistemas.",
     "stable_concurrency": 1,
-    "finished": "2026-11-07T05:58:54.564Z"
+    "finished": "2026-11-07T05:58:54.564Z",
+    "verdict": {
+      "status": "viable",
+      "headline": "Viável nesta instalação para uso leve",
+      "summary": "13/13 respostas sequenciais concluídas; resposta curta com p95 de 2.1 s. Com 2 chamadas simultâneas, 5/10 falharam. Este parecer mede capacidade, não qualidade das respostas.",
+      "concurrent_requests": 1,
+      "request_rates": [
+        {
+          "scenario": "short",
+          "label": "Resposta curta",
+          "p95_ms": 2094,
+          "measured_rpm": 28.7,
+          "planning_rpm": 20.1
+        },
+        {
+          "scenario": "medium",
+          "label": "Resposta média",
+          "p95_ms": 6897,
+          "measured_rpm": 8.7,
+          "planning_rpm": 6.1
+        },
+        {
+          "scenario": "long",
+          "label": "Resposta longa",
+          "p95_ms": 15388,
+          "measured_rpm": 3.9,
+          "planning_rpm": 2.7
+        },
+        {
+          "scenario": "context",
+          "label": "Contexto extenso",
+          "p95_ms": 8466,
+          "measured_rpm": 7.1,
+          "planning_rpm": 5
+        }
+      ],
+      "queue": {
+        "implemented": false,
+        "recommended_pending": 1,
+        "estimated_max_wait_s": 16,
+        "client_timeout_s": 41,
+        "wait_budget_s": 30,
+        "basis_p95_ms": 15388
+      },
+      "caveat": "Estimativas de planejamento com 30% de folga, baseadas em poucas amostras e sem fila real. Valide novamente com o tráfego e o hardware de produção."
+    }
   }
 }

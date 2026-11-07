@@ -1,7 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { createBenchmark } from '../src/benchmark.js';
+import { buildVerdict, createBenchmark } from '../src/benchmark.js';
+
+test('final verdict derives conservative rates and a bounded queue from measured p95', () => {
+  const rows = [
+    ['short', 'Resposta curta', 2000, 0.5],
+    ['medium', 'Resposta média', 7000, 0.14],
+    ['long', 'Resposta longa', 12000, 0.08],
+    ['context', 'Contexto extenso', 8000, 0.12],
+  ].map(([scenario, label, p95, rps]) => ({ scenario, label, concurrency: 1, attempts: 5, successes: 5, failures: 0, requests_per_second: rps, latency_ms: { p95 } }));
+  const verdict = buildVerdict({ results: rows, stable_concurrency: 1, warmup: { duration_ms: 3000 } });
+  assert.equal(verdict.status, 'viable');
+  assert.equal(verdict.concurrent_requests, 1);
+  assert.equal(verdict.request_rates[0].planning_rpm, 21);
+  assert.equal(verdict.request_rates[2].planning_rpm, 3.4);
+  assert.equal(verdict.queue.recommended_pending, 2);
+  assert.equal(verdict.queue.estimated_max_wait_s, 24);
+  assert.equal(verdict.queue.client_timeout_s, 46);
+  assert.equal(verdict.queue.implemented, false);
+});
 
 test('automatic diagnosis runs all scenarios and stops at failed concurrency', async () => {
   const db = new DatabaseSync(':memory:');
@@ -35,6 +53,8 @@ test('automatic diagnosis runs all scenarios and stops at failed concurrency', a
     assert.equal(job.results.at(-1).failures, 5);
     assert.equal(job.stable_concurrency, 1);
     assert.match(job.recommendation, /fila/);
+    assert.equal(job.verdict.status, 'viable');
+    assert.match(job.verdict.summary, /5\/10 falharam/);
     assert.equal(deleted, nextId);
     assert.equal(benchmark.list()[0].profile, 'auto');
   } finally { db.close(); }
