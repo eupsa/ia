@@ -20,9 +20,9 @@ import {
   Sparkles,
   Copy,
   RefreshCw,
-  ShieldCheck,
   Globe,
   Paperclip,
+  ChevronDown,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -71,6 +71,34 @@ const toolNames: Record<string, string> = {
   list_documents: "Lista de documentos",
   web_search: "Busca na internet",
 };
+function Overlay({ title, onClose, children, className = "" }: { title: string; onClose: () => void; children: React.ReactNode; className?: string }) {
+  const overlay = useRef<HTMLDivElement>(null);
+  const surface = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    surface.current?.querySelector<HTMLElement>('button:not([disabled])')?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      const layers = document.querySelectorAll('.overlay');
+      if (layers[layers.length - 1] !== overlay.current) return;
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); }
+      if (event.key !== 'Tab') return;
+      const items = [...(surface.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]') || [])];
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); previous?.focus(); };
+  }, []);
+  return <div ref={overlay} className={`overlay ${className}`} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}><div ref={surface} role="dialog" aria-modal="true" aria-label={title} className="settings-dialog">{children}</div></div>;
+}
+function SourceList({ label, children, openInitially = false }: { label: string; children: React.ReactNode; openInitially?: boolean }) {
+  const [open, setOpen] = useState(openInitially);
+  return <section className={`sources ${open ? 'expanded' : ''}`}><button type="button" className="sources-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>{label}<ChevronDown size={15}/></button>{open && <div className="sources-content">{children}</div>}</section>;
+}
 function App() {
   const [models, setModels] = useState<Model[]>([]);
   const [model, setModel] = useState(
@@ -91,9 +119,9 @@ function App() {
   const [tools, setTools] = useState(true);
   const [internet, setInternet] = useState(true);
   const [copied, setCopied] = useState<number | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ kind: 'chat' | 'document'; id: string; name: string } | null>(null);
   const controller = useRef<AbortController | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
-  const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const refreshModels = async () => {
     try {
@@ -115,10 +143,6 @@ function App() {
       controller.current?.abort();
     };
   }, []);
-  useEffect(() => {
-    if (panel) dialog.current?.showModal();
-    else dialog.current?.close();
-  }, [panel]);
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "instant" });
   }, [messages]);
@@ -150,14 +174,17 @@ function App() {
     input.current?.focus();
   }
   async function removeChat(id: string) {
-    if (!confirm("Excluir esta conversa?")) return;
-    try {
       await api("/chats/" + id, { method: "DELETE" });
       if (active === id) newChat();
       await refreshChats();
-    } catch (e) {
-      setError((e as Error).message);
-    }
+  }
+  async function deleteSelected() {
+    if (!confirmDelete) return;
+    try {
+      if (confirmDelete.kind === 'chat') await removeChat(confirmDelete.id);
+      else { await api('/documents/' + confirmDelete.id, { method: 'DELETE' }); await refreshDocs(); }
+      setConfirmDelete(null);
+    } catch (e) { setError((e as Error).message); }
   }
   async function send(event?: React.FormEvent, text = draft) {
     event?.preventDefault();
@@ -329,7 +356,7 @@ function App() {
                 className="delete-chat icon-button"
                 disabled={busy}
                 aria-label={`Excluir ${chat.title}`}
-                onClick={() => removeChat(chat.id)}
+                    onClick={() => setConfirmDelete({ kind: 'chat', id: chat.id, name: chat.title })}
               >
                 <Trash2 size={14} />
               </button>
@@ -359,11 +386,10 @@ function App() {
             >
               <Menu size={21} />
             </button>
-            <button className="model-switch" onClick={() => setPanel("models")}>
-              <span>{selected?.name || "Qwen3 0.6B"}</span>
-              <span className="chevron">⌄</span>
+            <button className="model-switch" onClick={() => setPanel("models")} aria-label="Escolher modelo">
+              <Cpu size={18}/><span>{selected?.name || "Qwen3 0.6B"}</span>
+              <ChevronDown size={15} className="chevron"/>
             </button>
-            <span className="tag">Local</span>
           </div>
           <button
             className="connection"
@@ -409,10 +435,7 @@ function App() {
                     </div>
                   )}
                   {!!message.sources?.length && (
-                    <details className="sources">
-                      <summary>
-                        {message.sources.length} trecho(s) consultado(s)
-                      </summary>
+                    <SourceList label={`${message.sources.length} trecho(s) consultado(s)`}>
                       {message.sources.map((source) => (
                         <div key={source.chunk_id}>
                           <strong>
@@ -422,18 +445,17 @@ function App() {
                           <p>{source.content}</p>
                         </div>
                       ))}
-                    </details>
+                    </SourceList>
                   )}
                   {!!message.web_sources?.length && (
-                    <details className="sources" open>
-                      <summary>{message.web_sources.length} fonte(s) da internet</summary>
+                    <SourceList label={`${message.web_sources.length} fonte(s) da internet`} openInitially>
                       {message.web_sources.map((source) => (
                         <div key={source.url}>
                           <strong><Globe size={14} /><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title || source.url}</a></strong>
                           <p>{source.snippet}</p>
                         </div>
                       ))}
-                    </details>
+                    </SourceList>
                   )}
                   {message.role === "assistant" && message.content && (
                     <button
@@ -555,23 +577,13 @@ function App() {
           </p>
         </div>
       </main>
-      <dialog
-        ref={dialog}
-        className="settings-dialog"
-        onCancel={() => setPanel(null)}
-        onClick={(e) => {
-          if (e.target === dialog.current) setPanel(null);
-        }}
-      >
+      {panel && <Overlay title={panel === 'models' ? 'Escolher modelo' : 'Documentos'} onClose={() => setPanel(null)}>
         <div className="dialog-heading">
           <div>
-            <span className="dialog-icon">
-              {panel === "models" ? <Cpu size={22} /> : <BookOpen size={22} />}
-            </span>
             <h2>
               {panel === "models"
-                ? "Inteligência, do seu jeito."
-                : "Sua base de conhecimento."}
+                ? "Escolha um modelo"
+                : "Seus documentos"}
             </h2>
           </div>
           <button
@@ -629,7 +641,7 @@ function App() {
                   <p>{m.description}</p>
                   {m.download?.status === "downloading" ? (
                     <div className="download-status">
-                      <progress value={m.download.progress} max={100} />
+                      <div className="progress-track" role="progressbar" aria-label={`Download de ${m.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={m.download.progress}><span style={{width: `${m.download.progress}%`}} /></div>
                       <span>
                         {m.download.progress}% · {m.download.message}
                       </span>
@@ -660,13 +672,6 @@ function App() {
                   )}
                 </section>
               ))}
-            </div>
-            <div className="panel-note">
-              <ShieldCheck size={17} />
-              <span>
-                O modelo roda no seu servidor. A busca na internet só é usada
-                quando o botão Internet está ativo. Um modelo fica carregado por vez.
-              </span>
             </div>
             {!online && (
               <p className="error">
@@ -706,15 +711,7 @@ function App() {
                       className="icon-button"
                       aria-label={`Excluir ${doc.name}`}
                       onClick={async () => {
-                        if (!confirm(`Excluir ${doc.name} da base?`)) return;
-                        try {
-                          await api("/documents/" + doc.id, {
-                            method: "DELETE",
-                          });
-                          await refreshDocs();
-                        } catch (e) {
-                          setError((e as Error).message);
-                        }
+                        setConfirmDelete({ kind: 'document', id: doc.id, name: doc.name });
                       }}
                     >
                       <Trash2 size={16} />
@@ -737,7 +734,8 @@ function App() {
             </div>
           </>
         )}
-      </dialog>
+      </Overlay>}
+      {confirmDelete && <Overlay title="Confirmar exclusão" className="confirm-overlay" onClose={() => setConfirmDelete(null)}><div className="confirm-icon"><Trash2 size={21}/></div><h2>Excluir {confirmDelete.kind === 'chat' ? 'conversa' : 'documento'}?</h2><p><strong>{confirmDelete.name}</strong> será excluído permanentemente.</p><div className="confirm-actions"><button className="secondary" onClick={() => setConfirmDelete(null)}>Cancelar</button><button className="danger-button" onClick={deleteSelected}>Excluir</button></div></Overlay>}
     </div>
   );
 }
