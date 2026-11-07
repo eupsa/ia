@@ -773,6 +773,49 @@ p {
     opacity: 1;
   }
 }
+/* Motion follows actions: opening, sending, receiving and selecting. */
+@keyframes enter-message {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes enter-dialog {
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes loading-dots {
+  0%, 20% { opacity: .25; }
+  50% { opacity: 1; }
+  80%, 100% { opacity: .25; }
+}
+@keyframes progress-glow {
+  50% { filter: brightness(.7); }
+}
+.message { animation: enter-message .32s cubic-bezier(.2,.8,.2,1) both; }
+.settings-dialog[open] { animation: enter-dialog .28s cubic-bezier(.2,.8,.2,1) both; }
+.settings-dialog[open]::backdrop, .scrim { animation: fade-in .24s ease-out both; }
+.error { animation: enter-message .22s ease-out both; }
+.composer { transition: border-color .22s ease, box-shadow .22s ease, background-color .22s ease; }
+.composer:focus-within { box-shadow: 0 8px 28px #0003, 0 0 0 3px #ffffff0d; }
+.model-card { transition: border-color .22s ease, background-color .22s ease, transform .22s ease; }
+.model-card:hover { background: #202020; transform: translateY(-2px); }
+.chat-link { transition: background-color .18s ease; }
+.feature-toggles button { transition: color .18s ease, border-color .18s ease, background-color .18s ease, transform .18s ease; }
+.feature-toggles button:hover:not(:disabled) { transform: translateY(-1px); }
+.feature-toggles button.enabled { background: #ffffff0a; }
+.send { transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+.send:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 18px #ffffff20; }
+.send:active:not(:disabled), .primary:active:not(:disabled) { transform: scale(.94); }
+.model-switch svg, .sidebar-bottom button svg, .copy-button svg { transition: transform .18s ease; }
+.sidebar-bottom button:hover svg, .copy-button:hover svg { transform: translateX(2px); }
+.sources[open] > div { animation: enter-message .22s ease-out both; }
+.waiting::after { content: ' ···'; display: inline-block; animation: loading-dots 1.4s ease-in-out infinite; }
+.download-status progress { animation: progress-glow 1.8s ease-in-out infinite; }
+.upload-zone { transition: border-color .2s ease, background-color .2s ease; }
+.upload-zone:hover { border-color: #aaa; }
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
