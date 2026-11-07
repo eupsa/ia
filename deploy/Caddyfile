@@ -1,0 +1,8 @@
+{$DOMAIN} {
+    basic_auth {
+        {$AUTH_USER} {$AUTH_PASSWORD_HASH}
+    }
+    reverse_proxy frontend:80 {
+        flush_interval -1
+    }
+}

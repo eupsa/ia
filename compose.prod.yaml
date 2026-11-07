@@ -1,0 +1,25 @@
+# Combine with compose.yaml. Docker Compose >= 2.24.4.
+services:
+  frontend:
+    ports: !reset []
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      DOMAIN: ${DOMAIN:?Configure DOMAIN no arquivo .env}
+      AUTH_USER: ${AUTH_USER:?Configure AUTH_USER no arquivo .env}
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:?Configure AUTH_PASSWORD_HASH no arquivo .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    mem_limit: 128m
+    depends_on:
+      frontend:
+        condition: service_healthy
+volumes:
+  caddy_data:
+  caddy_config:

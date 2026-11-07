@@ -1,0 +1,138 @@
+# Local
+
+Chat com IA no seu servidor. Frontend React, API Node.js 24/Express, SQLite e Ollama em Docker. Visual inspirado no LyricShift, com Figtree e paleta preta, branca e cinza. Sem cards ou título de boas-vindas; os ícones usam o fundo de seus componentes.
+
+## Rodar no computador
+
+Instale e inicie Docker Desktop com containers Linux e Docker Compose 2.24.4 ou superior. No diretório deste projeto:
+
+```sh
+docker compose up -d --build
+```
+
+Abra [localhost:8080](http://localhost:8080). Em **Meus modelos**, clique em **Baixar modelo** para Qwen3 0.6B ou Qwen3 1.7B. Aguarde o download e selecione **Usar modelo**. Nenhum modelo é baixado automaticamente.
+
+- Chat com respostas em streaming, botão para interromper e Markdown.
+- Conversas persistidas no servidor; é possível reabrir e excluir pelo histórico.
+- Modelos persistidos em volume Docker, inclusive após recriar containers.
+- Busca na internet via SearXNG interno, ativada pelo botão **Internet** no chat. Resultados vêm com links de fonte. O buscador usa mecanismos públicos e sua disponibilidade pode variar.
+- O download continua ao fechar o painel. Se o backend reiniciar, clique novamente em baixar para o Ollama retomar as camadas existentes.
+- Frontend disponível apenas em `127.0.0.1:8080`. API e Ollama não publicam portas no host.
+
+## Documentos e RAG
+
+No campo de mensagem, use o **clipe** para adicionar ou excluir documentos `.txt` e `.md` em UTF-8. Limites: 200.000 caracteres por arquivo e 100 documentos. O botão **Documentos** habilita ou desabilita a consulta à base para a próxima mensagem.
+
+A ingestão divide o texto em trechos de 1.200 caracteres com sobreposição de 200. A recuperação usa SQLite FTS5/BM25 por palavras-chave, sem embeddings ou outro modelo. Os trechos relevantes entram no contexto antes da geração e ficam disponíveis em **trecho(s) consultado(s)** abaixo da resposta, inclusive após reabrir a conversa. Esses trechos indicam o contexto consultado; não garantem que cada afirmação do modelo esteja fundamentada.
+
+Use palavras que apareçam no arquivo. A busca não identifica automaticamente sinônimos sem termos em comum. PDFs, imagens, OCR e busca vetorial não fazem parte desta implementação.
+
+## Tool Calling
+
+O botão **Ferramentas** habilita as ferramentas nativas do Ollama:
+
+| Ferramenta | Função |
+| --- | --- |
+| `calculator` | Contas com números, parênteses e operadores `+ - * / %`; `%` é resto da divisão. Sem execução de código. |
+| `current_time` | Data e hora no fuso America/Bahia. |
+| `list_documents` | Lista os arquivos da base local. |
+| `search_documents` | Busca novos trechos nos documentos durante a resposta. |
+| `web_search` | Pesquisa a internet e devolve links e trechos de páginas. |
+
+O backend recebe as chamadas do modelo, valida a ferramenta, executa e devolve o resultado ao modelo para continuar a resposta. Aceita até três rodadas com ferramentas, quatro chamadas por rodada e uma rodada final de resposta. Com **Documentos** desligado, as ferramentas de documentos também ficam indisponíveis.
+
+Exemplos:
+
+```text
+Use a calculadora para calcular (1250 * 12) / 4.
+Qual é a data de hoje? Use a ferramenta de data e hora.
+Quais documentos tenho na minha base?
+Segundo o manual.md, como funciona a instalação?
+```
+
+Os modelos pequenos podem errar ou deixar de chamar ferramentas. A aplicação fornece o protocolo e executa as chamadas; a decisão de chamá-las depende do modelo. Teste as duas opções com os seus próprios documentos.
+
+Perguntas sobre fatos recentes acionam uma busca antes da geração, mesmo se o modelo pequeno não escolher a ferramenta. Perguntas simples sobre a data ou a hora são respondidas diretamente com o relógio do servidor em America/Bahia. Quando a busca falha, a resposta deve indicar que o fato recente não foi verificado. O SearXNG é acessível apenas na rede Docker; não precisa de chave de API. A busca envia a consulta aos mecanismos externos selecionados pelo SearXNG.
+
+## Oracle ARM64: 4 CPUs / 12 GB RAM
+
+As imagens usadas são multiplataforma; o Docker escolhe ARM64 na VM. Não é necessário GPU ou emulação. A configuração limita o Ollama a 3,5 CPUs e 8 GB de RAM, com um modelo carregado, uma geração por vez, contexto de 4.096 tokens e até 1.024 tokens por rodada. Backend, frontend, buscador, proxy e sistema operacional usam a memória restante. Os limites de CPU são tetos de uso, não reservas exclusivas.
+
+Comece com 0.6B para avaliar a latência; 1.7B costuma exigir mais processamento. A velocidade real depende da CPU e do tamanho do contexto, e precisa ser medida na VM. O serviço não oferece fila de atendimento multiusuário: uma segunda geração recebe uma mensagem para aguardar.
+
+### Acesso privado sem domínio
+
+Na VM com Docker Engine e Compose instalados, copie o projeto e execute o mesmo comando de localhost. No seu computador, faça um túnel SSH:
+
+```sh
+ssh -L 8080:127.0.0.1:8080 ubuntu@IP_PUBLICO_DA_VM
+```
+
+Abra `http://localhost:8080` no computador. Esse modo não exige abrir a porta 8080 no firewall.
+
+### Publicar com domínio, HTTPS e senha
+
+1. Aponte o registro DNS A de um domínio para o IP público da VM. Se houver AAAA, ele também deve apontar corretamente. Libere TCP 80 e 443 nas regras de entrada da Oracle VCN e no firewall do sistema. Mantenha SSH restrito aos seus IPs administrativos.
+2. Copie `.env.example` para `.env` e configure `DOMAIN` e `AUTH_USER`.
+3. Gere o hash da senha de forma interativa:
+
+   ```sh
+   docker run --rm -it caddy:2.10-alpine caddy hash-password
+   ```
+
+4. Cole o hash em `AUTH_PASSWORD_HASH` no `.env`, preservando as aspas simples para não interpolar `$`. Não versione o arquivo `.env`.
+5. Suba o ambiente:
+
+   ```sh
+   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+   ```
+
+O Caddy emite o certificado automaticamente e exige usuário e senha para a interface inteira, incluindo API e downloads. O override remove a porta 8080; somente o Caddy publica 80/443. O primeiro acesso pode levar alguns minutos enquanto o certificado é emitido. O domínio e a VM precisam estar acessíveis pela internet para a emissão funcionar.
+
+Esta é uma instalação pessoal ou para um grupo confiável: todos que usam a mesma senha compartilham histórico, modelos e documentos. Não há contas individuais, isolamento entre usuários ou cobrança. Arquivos e conversas ficam em SQLite sem criptografia própria; proteja o disco e os backups da VM.
+
+## Operação e persistência
+
+```sh
+docker compose ps
+docker compose logs --tail=100 backend ollama
+docker compose restart backend
+docker compose down
+```
+
+Em produção, acrescente `-f compose.yaml -f compose.prod.yaml` a cada comando. `down` mantém os volumes; **`down -v` apaga conversas, documentos e modelos**.
+
+O banco e a base ficam no volume `local-chat_data`; os modelos em `local-chat_models`. Para um backup consistente do SQLite, pare o backend e copie o volume inteiro, incluindo eventuais arquivos WAL/SHM. Exemplo em Bash, a partir deste diretório:
+
+```sh
+docker compose stop backend
+docker run --rm -v local-chat_data:/source:ro -v "$PWD:/backup" alpine:3.22 tar czf /backup/local-chat-data.tar.gz -C /source .
+docker compose start backend
+```
+
+Proteja esse arquivo: contém conversas e documentos. Faça também backup do `.env` e, em produção, dos volumes Caddy se quiser preservar a configuração e os certificados.
+
+Se o serviço Ollama estiver desconectado, confira os logs e os recursos disponíveis no Docker Desktop. Reserve memória suficiente no Docker para os limites definidos. O primeiro carregamento de um modelo é mais lento; a geração tem limite de dez minutos por solicitação.
+
+## Desenvolvimento e validação
+
+Para trabalhar sem reconstruir a interface a cada mudança, use Node.js 24 ou superior:
+
+```sh
+npm ci
+npm test
+npm run build
+```
+
+O frontend usa Vite. Inicie primeiro os três serviços com `docker compose up -d --build`. Depois execute `npm run dev` na raiz ou em `frontend/`. O Vite abre em `localhost:5173` e envia `/api` para `127.0.0.1:8080`, onde o Nginx encaminha as requisições ao backend Docker. O modo padrão Docker não publica as portas do backend e do Ollama.
+
+Os testes de integração usam respostas simuladas do Ollama para validar streaming, persistência, recuperação de documentos, ciclo de ferramentas, download e falhas. Não medem qualidade do modelo ou desempenho em ARM64.
+
+## Referências
+
+- [Ollama: Docker](https://docs.ollama.com/docker)
+- [Ollama: Tool Calling](https://docs.ollama.com/capabilities/tool-calling)
+- [Qwen3 0.6B](https://ollama.com/library/qwen3:0.6b) e [Qwen3 1.7B](https://ollama.com/library/qwen3:1.7b)
+- [SQLite FTS5](https://sqlite.org/fts5.html)
+- [SearXNG Search API](https://docs.searxng.org/dev/search_api.html)
+- [Caddy: autenticação](https://caddyserver.com/docs/caddyfile/directives/basic_auth)
