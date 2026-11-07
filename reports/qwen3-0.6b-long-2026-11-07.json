@@ -1,0 +1,372 @@
+{
+  "environment": {
+    "host_platform": "win32",
+    "host_arch": "x64",
+    "host_cpus": 16,
+    "host_ram_gb": 16,
+    "api_base": "http://127.0.0.1:8080",
+    "note": "Medição no host atual; repetir na VM Oracle para dados de produção."
+  },
+  "benchmark": {
+    "id": "f6cf5094-38c2-4a15-bff0-014f39c38f14",
+    "status": "done",
+    "model": "qwen3:0.6b",
+    "profile": "long",
+    "repetitions": 5,
+    "concurrency": [
+      1,
+      2,
+      4
+    ],
+    "prompt": "Escreva uma explicação de cerca de 150 palavras sobre como estruturar uma API para sistemas internos. Inclua autenticação, tratamento de erros, logs, testes e limites de concorrência.",
+    "results": [
+      {
+        "concurrency": 1,
+        "attempts": 5,
+        "successes": 5,
+        "failures": 0,
+        "elapsed_s": 57.54,
+        "requests_per_second": 0.09,
+        "latency_ms": {
+          "p50": 10797,
+          "p95": 14300,
+          "max": 14300
+        },
+        "first_token_ms": {
+          "p50": 92,
+          "p95": 965
+        },
+        "samples": [
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 12904,
+            "first_token_ms": 406,
+            "output_tokens": 673,
+            "error": null
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 9057,
+            "first_token_ms": 90,
+            "output_tokens": 504,
+            "error": null
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 14300,
+            "first_token_ms": 92,
+            "output_tokens": 743,
+            "error": null
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 10481,
+            "first_token_ms": 965,
+            "output_tokens": 530,
+            "error": null
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 10797,
+            "first_token_ms": 86,
+            "output_tokens": 590,
+            "error": null
+          }
+        ]
+      },
+      {
+        "concurrency": 2,
+        "attempts": 10,
+        "successes": 5,
+        "failures": 5,
+        "elapsed_s": 58.1,
+        "requests_per_second": 0.09,
+        "latency_ms": {
+          "p50": 12298,
+          "p95": 13123,
+          "max": 13123
+        },
+        "first_token_ms": {
+          "p50": 101,
+          "p95": 953
+        },
+        "samples": [
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 13044,
+            "first_token_ms": 88,
+            "output_tokens": 692,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 6,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 11846,
+            "first_token_ms": 93,
+            "output_tokens": 639,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 11,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 7787,
+            "first_token_ms": 105,
+            "output_tokens": 439,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 9,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 13123,
+            "first_token_ms": 101,
+            "output_tokens": 696,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 12,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 12298,
+            "first_token_ms": 953,
+            "output_tokens": 619,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 7,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          }
+        ]
+      },
+      {
+        "concurrency": 4,
+        "attempts": 20,
+        "successes": 5,
+        "failures": 15,
+        "elapsed_s": 66.55,
+        "requests_per_second": 0.08,
+        "latency_ms": {
+          "p50": 13566,
+          "p95": 14728,
+          "max": 14728
+        },
+        "first_token_ms": {
+          "p50": 104,
+          "p95": 1012
+        },
+        "samples": [
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 12032,
+            "first_token_ms": 104,
+            "output_tokens": 648,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 14,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 15,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 16,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 12243,
+            "first_token_ms": 106,
+            "output_tokens": 658,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 13,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 14,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 15,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 13566,
+            "first_token_ms": 99,
+            "output_tokens": 712,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 13,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 14,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 15,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 14728,
+            "first_token_ms": 95,
+            "output_tokens": 763,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 12,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 13,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 14,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 13982,
+            "first_token_ms": 1012,
+            "output_tokens": 648,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 16,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 17,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 18,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          }
+        ]
+      }
+    ],
+    "started": "2026-11-07T05:43:23.637Z",
+    "warmup": {
+      "ok": true,
+      "status": 200,
+      "duration_ms": 1514,
+      "first_token_ms": 203,
+      "output_tokens": 87,
+      "error": null
+    },
+    "finished": "2026-11-07T05:46:27.404Z"
+  }
+}

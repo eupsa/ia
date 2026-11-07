@@ -130,6 +130,16 @@ As métricas são do cliente HTTP no próprio backend, incluindo rede Docker e t
 
 Medição local realizada em 7 de novembro de 2026, Qwen3 0.6B, perfil curto, Docker Desktop em Windows x64 (host 16 CPUs/16 GB; Ollama limitado a 3,5 CPUs/8 GB). Aquecimento: 3.262 ms. Com 1 chamada simultânea: 5/5 sucessos, p50 1.759 ms, p95 2.403 ms, 0,55 resposta/s. Com 2: 5/10 sucessos, 5 recusas HTTP 409. Com 4: 5/20 sucessos, 15 recusas HTTP 409. O relatório completo está em `reports/qwen3-0.6b-short-2026-11-07.json`. Esses valores não são estimativas da VM Oracle.
 
+Os três perfis foram medidos com cinco rodadas por nível. Os números abaixo são latências p50 das respostas bem-sucedidas, em segundos:
+
+| Perfil | 1 simultânea | 2 simultâneas | 4 simultâneas | Sucessos por nível |
+| --- | ---: | ---: | ---: | --- |
+| Curto | 1,76 | 1,70 | 1,56 | 5/5 · 5/10 · 5/20 |
+| Médio | 4,98 | 8,92 | 7,56 | 5/5 · 5/10 · 5/20 |
+| Longo | 10,80 | 12,30 | 13,57 | 5/5 · 5/10 · 5/20 |
+
+O primeiro token teve p50 entre 86 e 104 ms após o aquecimento. Os perfis médio e longo geraram centenas de tokens por resposta; a latência total cresce com o tamanho real do texto. Cada perfil tem seu relatório JSON individual em `reports/`, com amostras, percentis e códigos HTTP. A taxa sustentada de respostas completas com uma chamada simultânea foi 0,55/s (curto), 0,16/s (médio) e 0,09/s (longo). Medições feitas em Windows Docker Desktop não substituem o teste na VM ARM64.
+
 ## Operação e persistência
 
 ```sh

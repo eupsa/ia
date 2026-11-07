@@ -1,0 +1,372 @@
+{
+  "environment": {
+    "host_platform": "win32",
+    "host_arch": "x64",
+    "host_cpus": 16,
+    "host_ram_gb": 16,
+    "api_base": "http://127.0.0.1:8080",
+    "note": "Medição no host atual; repetir na VM Oracle para dados de produção."
+  },
+  "benchmark": {
+    "id": "d5b44384-2286-4905-a01f-f60152647c00",
+    "status": "done",
+    "model": "qwen3:0.6b",
+    "profile": "medium",
+    "repetitions": 5,
+    "concurrency": [
+      1,
+      2,
+      4
+    ],
+    "prompt": "Explique em três tópicos como proteger uma API REST, incluindo autenticação, limites de requisição e registro de erros.",
+    "results": [
+      {
+        "concurrency": 1,
+        "attempts": 5,
+        "successes": 5,
+        "failures": 0,
+        "elapsed_s": 31.22,
+        "requests_per_second": 0.16,
+        "latency_ms": {
+          "p50": 4981,
+          "p95": 9462,
+          "max": 9462
+        },
+        "first_token_ms": {
+          "p50": 92,
+          "p95": 264
+        },
+        "samples": [
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 4929,
+            "first_token_ms": 264,
+            "output_tokens": 288,
+            "error": null
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 9462,
+            "first_token_ms": 92,
+            "output_tokens": 540,
+            "error": null
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 3777,
+            "first_token_ms": 94,
+            "output_tokens": 231,
+            "error": null
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 8075,
+            "first_token_ms": 84,
+            "output_tokens": 462,
+            "error": null
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 4981,
+            "first_token_ms": 86,
+            "output_tokens": 299,
+            "error": null
+          }
+        ]
+      },
+      {
+        "concurrency": 2,
+        "attempts": 10,
+        "successes": 5,
+        "failures": 5,
+        "elapsed_s": 45.21,
+        "requests_per_second": 0.11,
+        "latency_ms": {
+          "p50": 8915,
+          "p95": 10483,
+          "max": 10483
+        },
+        "first_token_ms": {
+          "p50": 95,
+          "p95": 823
+        },
+        "samples": [
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 10483,
+            "first_token_ms": 87,
+            "output_tokens": 582,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 7,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 7552,
+            "first_token_ms": 823,
+            "output_tokens": 400,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 9,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 10374,
+            "first_token_ms": 94,
+            "output_tokens": 578,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 10,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 7889,
+            "first_token_ms": 95,
+            "output_tokens": 450,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 12,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 8915,
+            "first_token_ms": 102,
+            "output_tokens": 505,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 10,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          }
+        ]
+      },
+      {
+        "concurrency": 4,
+        "attempts": 20,
+        "successes": 5,
+        "failures": 15,
+        "elapsed_s": 34.8,
+        "requests_per_second": 0.14,
+        "latency_ms": {
+          "p50": 7562,
+          "p95": 8245,
+          "max": 8245
+        },
+        "first_token_ms": {
+          "p50": 101,
+          "p95": 839
+        },
+        "samples": [
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 8245,
+            "first_token_ms": 94,
+            "output_tokens": 472,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 11,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 12,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 13,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 5198,
+            "first_token_ms": 101,
+            "output_tokens": 308,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 14,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 15,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 16,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 7628,
+            "first_token_ms": 100,
+            "output_tokens": 435,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 14,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 16,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 17,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 6170,
+            "first_token_ms": 839,
+            "output_tokens": 319,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 14,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 15,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 15,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": true,
+            "status": 200,
+            "duration_ms": 7562,
+            "first_token_ms": 105,
+            "output_tokens": 431,
+            "error": null
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 16,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 17,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          },
+          {
+            "ok": false,
+            "status": 409,
+            "duration_ms": 18,
+            "first_token_ms": null,
+            "output_tokens": null,
+            "error": "Aguarde a operação atual terminar."
+          }
+        ]
+      }
+    ],
+    "started": "2026-11-07T05:41:25.458Z",
+    "warmup": {
+      "ok": true,
+      "status": 200,
+      "duration_ms": 2791,
+      "first_token_ms": 719,
+      "output_tokens": 138,
+      "error": null
+    },
+    "finished": "2026-11-07T05:43:19.653Z"
+  }
+}
