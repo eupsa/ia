@@ -12,7 +12,7 @@ Frontend em português com visual preto e branco, API própria, histórico persi
 
 > **Estado do projeto:** aplicação pessoal ou para um grupo de confiança. A API pode ser publicada com HTTPS e chave Bearer; todos os clientes com a mesma chave compartilham dados. Não há contas individuais nem isolamento por cliente.
 
-**Guias:** [instalação e operação](docs/deployment.md) · [referência da API](docs/api.md) · [metodologia do benchmark](docs/benchmark.md) · [como contribuir](CONTRIBUTING.md) · [segurança](SECURITY.md) · [histórico de versões](CHANGELOG.md).
+**Guias:** [telas e controles do site](docs/interface.md) · [instalação e operação](docs/deployment.md) · [referência da API](docs/api.md) · [metodologia do benchmark](docs/benchmark.md) · [como contribuir](CONTRIBUTING.md) · [segurança](SECURITY.md) · [histórico de versões](CHANGELOG.md).
 
 ## O que há aqui
 
@@ -48,6 +48,8 @@ docker compose up -d --build
 Abra **[http://localhost:8080](http://localhost:8080)**. Entre em **Meus modelos**, baixe o Qwen3 0.6B (523 MB) ou 1.7B (1,4 GB) e selecione **Usar modelo**. O primeiro carregamento pode demorar. Modelos e conversas ficam em volumes Docker e sobrevivem à recriação dos containers.
 
 O frontend publica somente `127.0.0.1:8080`; a API, o Ollama e o buscador ficam na rede Docker. Nenhum modelo é baixado sem a ação do usuário.
+
+Para entender **cada área do site**, consulte o [guia da interface](docs/interface.md): conversa, histórico, seleção de modelos, documentos, controles de ferramentas e internet, resultado do teste de carga e onde os dados ficam.
 
 ## Diagnóstico de carga automático
 
@@ -128,7 +130,7 @@ compose.prod.yaml    Site com Caddy e autenticação
 compose.api.yaml     API somente, com Bearer e HTTPS
 deploy/              Configuração de Caddy e SearXNG
 reports/             Medições locais reproduzíveis
-docs/                Guias da API, implantação e diagnóstico
+docs/                Guias da interface, API, implantação e diagnóstico
 .github/workflows/   CI: testes e build em pushes e pull requests
 scripts/             Cliente de benchmark para linha de comando
 ```

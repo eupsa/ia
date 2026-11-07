@@ -2,6 +2,10 @@
 
 Este projeto usa tags para marcar etapas verificáveis. As datas abaixo seguem o horário de America/Bahia.
 
+## v0.15.0 — guia da interface · 7 nov. 2026
+
+- Documentação de todas as áreas, painéis e controles do site, incluindo estados, dados salvos e erros comuns.
+
 ## v0.14.0 — CI atualizada · 7 nov. 2026
 
 - Ações oficiais do GitHub atualizadas para o runtime Node.js 24.
