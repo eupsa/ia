@@ -1,5 +1,8 @@
 # Uso: docker compose -f compose.yaml -f compose.api.yaml up -d --build ollama search backend gateway
 services:
+  search:
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?Defina SEARXNG_SECRET no arquivo .env}
   backend:
     environment:
       API_KEY: ${API_KEY:?Defina API_KEY no arquivo .env}

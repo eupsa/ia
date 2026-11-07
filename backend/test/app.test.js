@@ -141,6 +141,13 @@ test("tools and RAG can be disabled; unsupported models and documents rejected",
   ).text();
   assert.equal(calls[0].tools, undefined);
   assert.equal(calls[0].messages.length, 2);
+  await (await request(`/chats/${chat.id}/messages`, {
+    content: 'Olá novamente',
+    model: 'qwen3:0.6b',
+    rag: false,
+    internet: false,
+  })).text();
+  assert.deepEqual(calls[1].tools.map(tool => tool.function.name).sort(), ['calculator', 'current_time']);
 });
 test("download progress reaches completion independently from polling browser", async (t) => {
   const { request } = await fixture(

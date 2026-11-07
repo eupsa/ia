@@ -371,10 +371,9 @@ export function createApp({
               : {
                   tools: toolDefinitions.filter(
                     (t) =>
-                      req.body.rag !== false ||
-                      !["search_documents", "list_documents"].includes(
-                        t.function.name,
-                      ) && (req.body.internet !== false || t.function.name !== 'web_search'),
+                      (req.body.rag !== false ||
+                        !["search_documents", "list_documents"].includes(t.function.name)) &&
+                      (req.body.internet !== false || t.function.name !== 'web_search'),
                   ),
                 }),
             options: {

@@ -1,5 +1,8 @@
 # Combine with compose.yaml. Docker Compose >= 2.24.4.
 services:
+  search:
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?Configure SEARXNG_SECRET no arquivo .env}
   frontend:
     ports: !reset []
   caddy:
