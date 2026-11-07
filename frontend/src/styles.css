@@ -840,6 +840,10 @@ p {
 .benchmark-failures { color: #ccc; font-size: 12px; }
 .benchmark-report .sources { margin-top: 8px; }
 .benchmark-report .sources-content p { margin: 8px 0; font-size: 11px; }
+.benchmark-history { display: grid; gap: 6px; margin: 24px 0; }
+.benchmark-history strong { font-size: 12px; margin-bottom: 4px; }
+.benchmark-history button { text-align: left; border: 1px solid #333; border-radius: 8px; padding: 9px 12px; font-size: 11px; color: #bbb; }
+.benchmark-history button.active { color: #fff; border-color: #888; background: #242424; }
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;

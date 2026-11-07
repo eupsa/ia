@@ -93,7 +93,7 @@ export function createApp({
     res.status(204).end();
   });
   const known = (id) => catalog.some((m) => m.id === id);
-  const benchmark = createBenchmark({ fetcher, apiKey, installed: known });
+  const benchmark = createBenchmark({ fetcher, apiKey, installed: known, db });
   const call = (path, options = {}) =>
     fetcher(`${ollama}${path}`, {
       ...options,
@@ -138,6 +138,7 @@ export function createApp({
       res.status(202).json(benchmark.start(req.body));
     } catch (error) { res.status(409).json({ error: error.message }); }
   });
+  app.get('/api/benchmarks', (req, res) => res.json(benchmark.list()));
   app.get('/api/benchmarks/:id', (req, res) => {
     const job = benchmark.get(req.params.id);
     if (!job) return res.status(404).json({ error: 'Teste não encontrado.' });
@@ -380,7 +381,8 @@ export function createApp({
               num_ctx: 4096,
               num_predict: 1024,
               num_thread: 4,
-              temperature: 0.7,
+              temperature: req.body.benchmark === true ? 0 : 0.7,
+              ...(req.body.benchmark === true ? { seed: 42 } : {}),
             },
           }),
         });
@@ -405,6 +407,9 @@ export function createApp({
         }
         let done = false;
         let evalCount = null;
+        let evalDuration = null;
+        let promptEvalCount = null;
+        let promptEvalDuration = null;
         let roundAnswer = "";
         const calls = [];
         for await (const item of ndjson(response.body)) {
@@ -416,6 +421,9 @@ export function createApp({
           if (token) emit({ token });
           if (item.done) {
             evalCount = item.eval_count ?? null;
+            evalDuration = item.eval_duration ?? null;
+            promptEvalCount = item.prompt_eval_count ?? null;
+            promptEvalDuration = item.prompt_eval_duration ?? null;
             done = true;
             break;
           }
@@ -425,7 +433,7 @@ export function createApp({
             "Resposta interrompida. Envie uma nova mensagem para continuar.",
           );
         if (!calls.length) {
-          emit({ done: true, eval_count: evalCount });
+          emit({ done: true, eval_count: evalCount, eval_duration: evalDuration, prompt_eval_count: promptEvalCount, prompt_eval_duration: promptEvalDuration });
           break;
         }
         if (round === 3 || req.body.tools === false)
