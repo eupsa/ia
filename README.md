@@ -91,6 +91,45 @@ O Caddy emite o certificado automaticamente e exige usuário e senha para a inte
 
 Esta é uma instalação pessoal ou para um grupo confiável: todos que usam a mesma senha compartilham histórico, modelos e documentos. Não há contas individuais, isolamento entre usuários ou cobrança. Arquivos e conversas ficam em SQLite sem criptografia própria; proteja o disco e os backups da VM.
 
+## API sem frontend para outros sistemas
+
+Crie `.env` com `DOMAIN=api.seudominio.com` e `API_KEY=` seguido de uma chave longa e aleatória. Para gerar uma chave hexadecimal, use `openssl rand -hex 32` na VM. Aponte o DNS para a VM e libere TCP 80/443. Inicie apenas os serviços necessários:
+
+```sh
+docker compose -f compose.yaml -f compose.api.yaml up -d --build ollama search backend gateway
+```
+
+Esse comando não inicia o frontend. O Caddy fornece HTTPS, o backend exige `Authorization: Bearer SUA_CHAVE` em todas as rotas da API, exceto `/api/health`, e o Ollama e o SearXNG continuam sem portas públicas. A porta 3000 fica ligada apenas a `127.0.0.1` da VM, para testes locais ou túnel SSH. Não coloque a chave em código frontend ou apps distribuídos ao público; seus serviços devem guardá-la no servidor.
+
+Se este projeto já estiver rodando com frontend na mesma VM, execute `docker compose down` antes do comando acima. Isso remove os containers antigos e preserva os volumes de conversas e modelos.
+
+Exemplo de cliente HTTP (requisições JSON; resposta da mensagem em NDJSON):
+
+```sh
+curl -H "Authorization: Bearer $API_KEY" https://api.seudominio.com/api/models
+curl -X POST -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" -d '{}' https://api.seudominio.com/api/chats
+curl -N -X POST -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" -d '{"model":"qwen3:0.6b","content":"Explique a API em uma frase.","rag":false,"tools":false,"internet":false}' https://api.seudominio.com/api/chats/ID_DA_CONVERSA/messages
+```
+
+O cliente lê as linhas JSON do stream: `token` contém texto incremental; `done:true` encerra com `eval_count` (tokens gerados); `error` informa falhas. Cada sistema pode manter o ID da conversa para preservar o histórico. Use `DELETE /api/chats/:id` quando não precisar mais dela. A chave é compartilhada: todos os sistemas autorizados acessam as mesmas conversas. Se precisar de isolamento entre clientes, será necessária autenticação por cliente e autorização por conversa.
+
+## Teste de carga real
+
+No site, abra **Teste de carga**, escolha o perfil de resposta e inicie. O backend faz uma chamada de aquecimento e depois cinco rodadas sequenciais com 1, 2 e 4 chamadas simultâneas por rodada. São 36 chamadas reais ao endpoint de chat, usando o modelo selecionado. O relatório inclui primeiro token, latência total p50/p95, respostas por segundo, erros e amostras individuais. Baixe o JSON para comparar instalações. O teste desativa RAG, ferramentas e internet para medir a geração do modelo sem variação de serviços externos.
+
+Também é possível iniciar e consultar o teste pela API autenticada:
+
+```sh
+curl -X POST -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" -d '{"model":"qwen3:0.6b","profile":"short","repetitions":5,"concurrency":[1,2,4]}' https://api.seudominio.com/api/benchmarks
+curl -H "Authorization: Bearer $API_KEY" https://api.seudominio.com/api/benchmarks/ID_DO_TESTE
+```
+
+O script `node scripts/run-benchmark.mjs` executa o mesmo teste e grava JSON em `reports/`. Por padrão usa `http://127.0.0.1:8080` e `qwen3:0.6b`. Em modo API, configure `API_BASE_URL`, `API_KEY`, `BENCH_MODEL`, `BENCH_PROFILE` e `BENCH_REPETITIONS` no ambiente do processo. Execute o script da máquina cliente se quiser incluir a latência da rede entre ela e a VM.
+
+As métricas são do cliente HTTP no próprio backend, incluindo rede Docker e tempo de leitura do stream. `first_token_ms` mede da abertura da requisição à chegada do primeiro texto; `output_tokens` vem de `eval_count` do Ollama. As amostras recusadas (HTTP 409) contam como falhas e não entram nos percentis de sucesso. O backend atual só aceita uma geração por vez; as rodadas simultâneas mostram esse limite em vez de ocultá-lo. Com cinco amostras por nível, p95 é exploratório: rode mais repetições para estimar cauda com maior confiança. O resultado no computador local não representa o desempenho da VM Oracle; execute o mesmo teste nela, em horário sem tráfego, com o modelo e a configuração finais.
+
+Medição local realizada em 7 de novembro de 2026, Qwen3 0.6B, perfil curto, Docker Desktop em Windows x64 (host 16 CPUs/16 GB; Ollama limitado a 3,5 CPUs/8 GB). Aquecimento: 3.262 ms. Com 1 chamada simultânea: 5/5 sucessos, p50 1.759 ms, p95 2.403 ms, 0,55 resposta/s. Com 2: 5/10 sucessos, 5 recusas HTTP 409. Com 4: 5/20 sucessos, 15 recusas HTTP 409. O relatório completo está em `reports/qwen3-0.6b-short-2026-11-07.json`. Esses valores não são estimativas da VM Oracle.
+
 ## Operação e persistência
 
 ```sh

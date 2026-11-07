@@ -23,6 +23,7 @@ import {
   Globe,
   Paperclip,
   ChevronDown,
+  Activity,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -49,6 +50,9 @@ type Message = {
   tool?: string;
 };
 type Document = { id: string; name: string };
+type BenchSample = { ok: boolean; status: number | null; duration_ms: number; first_token_ms: number | null; output_tokens: number | null; error: string | null };
+type BenchResult = { concurrency: number; attempts: number; successes: number; failures: number; elapsed_s: number; requests_per_second: number; latency_ms: { p50: number | null; p95: number | null; max: number | null }; first_token_ms: { p50: number | null; p95: number | null }; samples: BenchSample[] };
+type Benchmark = { id: string; status: string; model: string; profile: string; prompt: string; warmup?: BenchSample; results: BenchResult[]; error?: string };
 async function api(path: string, init?: RequestInit) {
   const response = await fetch("/api" + path, {
     ...init,
@@ -108,7 +112,9 @@ function App() {
   const [active, setActive] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
-  const [panel, setPanel] = useState<"models" | "documents" | null>(null);
+  const [panel, setPanel] = useState<"models" | "documents" | "benchmark" | null>(null);
+  const [benchProfile, setBenchProfile] = useState<'short'|'medium'|'long'>('short');
+  const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
   const [sidebar, setSidebar] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -146,6 +152,11 @@ function App() {
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "instant" });
   }, [messages]);
+  useEffect(() => {
+    if (!benchmark || !['pending','running'].includes(benchmark.status)) return;
+    const timer = setInterval(() => api('/benchmarks/' + benchmark.id).then(setBenchmark).catch(e => setError(e.message)), 1000);
+    return () => clearInterval(timer);
+  }, [benchmark?.id, benchmark?.status]);
   const selected = models.find((m) => m.id === model);
   const downloading = models.some((m) => m.download?.status === "downloading");
   const chooseModel = (id: string) => {
@@ -285,6 +296,10 @@ function App() {
       setError((e as Error).message);
     }
   }
+  async function startBenchmark() {
+    try { setError(''); setBenchmark(await api('/benchmarks', post({ model, profile: benchProfile, repetitions: 5, concurrency: [1,2,4] }))); }
+    catch (e) { setError((e as Error).message); }
+  }
   async function upload(files: FileList | null) {
     if (!files) return;
     setUploading(true);
@@ -364,6 +379,7 @@ function App() {
           ))}
         </nav>
         <div className="sidebar-bottom">
+          <button onClick={() => { setPanel('benchmark'); setSidebar(false); }}><Activity size={18}/><span>Teste de carga</span><ArrowUpRight size={16}/></button>
           <button
             onClick={() => {
               setPanel("models");
@@ -577,13 +593,11 @@ function App() {
           </p>
         </div>
       </main>
-      {panel && <Overlay title={panel === 'models' ? 'Escolher modelo' : 'Documentos'} onClose={() => setPanel(null)}>
+      {panel && <Overlay title={panel === 'models' ? 'Escolher modelo' : panel === 'benchmark' ? 'Teste de carga' : 'Documentos'} onClose={() => setPanel(null)}>
         <div className="dialog-heading">
           <div>
             <h2>
-              {panel === "models"
-                ? "Escolha um modelo"
-                : "Seus documentos"}
+              {panel === "models" ? "Escolha um modelo" : panel === 'benchmark' ? 'Teste de carga' : "Seus documentos"}
             </h2>
           </div>
           <button
@@ -595,9 +609,7 @@ function App() {
           </button>
         </div>
         <p className="dialog-intro">
-          {panel === "models"
-            ? "Escolha um modelo, baixe uma vez e converse direto no seu servidor."
-            : "Adicione seus arquivos. A IA encontra trechos relevantes e mostra as fontes nas respostas."}
+          {panel === "models" ? "Escolha um modelo, baixe uma vez e converse direto no seu servidor." : panel === 'benchmark' ? 'Requisições reais ao modelo instalado, com aquecimento e carga simultânea.' : "Adicione seus arquivos. A IA encontra trechos relevantes e mostra as fontes nas respostas."}
         </p>
         {error && (
           <div className="error" role="alert">
@@ -680,6 +692,17 @@ function App() {
               </p>
             )}
           </>
+        ) : panel === 'benchmark' ? (
+          <div className="benchmark-panel">
+            <p><strong>Modelo:</strong> {selected?.name || model}. O teste usa o mesmo endpoint das conversas, sem RAG, internet ou ferramentas.</p>
+            <div className="benchmark-options" role="group" aria-label="Tamanho da resposta">
+              {(['short','medium','long'] as const).map((profile) => <button key={profile} type="button" className={benchProfile === profile ? 'enabled' : ''} aria-pressed={benchProfile === profile} onClick={() => setBenchProfile(profile)}>{ { short: 'Curta', medium: 'Média', long: 'Longa' }[profile]}</button>)}
+            </div>
+            <p className="benchmark-prompt">“{ {short:'Em uma frase, explique o que é uma API REST.',medium:'Explique em três tópicos como proteger uma API REST...',long:'Escreva cerca de 150 palavras sobre como estruturar uma API...'}[benchProfile]}”</p>
+            <p className="benchmark-method">1 aquecimento + 5 rodadas em cada nível de simultaneidade (1, 2 e 4). Total: 36 requisições. As conversas temporárias são apagadas.</p>
+            <button className="primary" disabled={!selected?.installed || benchmark?.status === 'running' || benchmark?.status === 'pending'} onClick={startBenchmark}><Activity size={16}/>Iniciar teste real</button>
+            {benchmark && <div className="benchmark-report" aria-live="polite"><h3>{benchmark.status === 'done' ? 'Resultado' : benchmark.status === 'error' ? 'Falha no teste' : 'Teste em andamento…'}</h3>{benchmark.error && <p role="alert">{benchmark.error}</p>}{benchmark.warmup && <p>Aquecimento: {benchmark.warmup.ok ? `${benchmark.warmup.duration_ms} ms` : benchmark.warmup.error}</p>}{benchmark.results.length > 0 && <div className="benchmark-table-wrap"><table><thead><tr><th>Simultâneas</th><th>Sucesso</th><th>Falhas</th><th>1º token p50</th><th>Total p50 / p95</th><th>Resp./s</th></tr></thead><tbody>{benchmark.results.map(row => <tr key={row.concurrency}><td>{row.concurrency}</td><td>{row.successes}/{row.attempts}</td><td>{row.failures}</td><td>{row.first_token_ms.p50 ?? '—'} ms</td><td>{row.latency_ms.p50 ?? '—'} / {row.latency_ms.p95 ?? '—'} ms</td><td>{row.requests_per_second}</td></tr>)}</tbody></table></div>}{benchmark.results.some(row => row.failures) && <p className="benchmark-failures">Falhas incluem recusas HTTP 409 quando o modelo já está gerando. Veja os códigos e tempos nas amostras abaixo.</p>}{benchmark.results.map(row => <SourceList key={row.concurrency} label={`${row.concurrency} simultânea(s): amostras individuais`}>{row.samples.map((sample,i) => <p key={i}>#{i+1} · HTTP {sample.status ?? 'rede'} · {sample.duration_ms} ms · {sample.output_tokens ?? '—'} tokens {sample.error ? `· ${sample.error}` : ''}</p>)}</SourceList>)}{benchmark.status === 'done' && <button className="secondary" onClick={() => { const blob = new Blob([JSON.stringify(benchmark,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.href=url; link.download=`benchmark-${benchmark.model.replace(':','-')}.json`; link.click(); URL.revokeObjectURL(url); }}>Baixar JSON</button>}</div>}
+          </div>
         ) : (
           <>
             <label className={`upload-zone ${uploading ? "disabled" : ""}`}>

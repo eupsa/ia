@@ -821,6 +821,25 @@ p {
 .composer:focus-within { background: #202020; border-color: #888; }
 .feature-toggles button { min-height: 32px; }
 @media (max-width: 760px) { .overlay .settings-dialog { padding: 24px 20px; } .topbar .model-switch { font-size: 12px; padding: 7px 10px; } .confirm-actions button { flex: 1; } }
+.benchmark-panel { color: #bbb; font-size: 13px; }
+.benchmark-panel > p { margin: 0 0 16px; }
+.benchmark-panel strong { color: #fff; }
+.benchmark-panel .primary { margin-top: 9px; }
+.benchmark-options { display: flex; gap: 8px; margin: 20px 0 14px; }
+.benchmark-options button { border: 1px solid #454545; border-radius: 99px; padding: 9px 16px; color: #bbb; }
+.benchmark-options button.enabled { background: #fff; border-color: #fff; color: #000; }
+.benchmark-prompt { border-left: 2px solid #777; padding-left: 13px; font-style: italic; }
+.benchmark-method { color: #888; font-size: 12px; }
+.benchmark-report { border-top: 1px solid #363636; margin-top: 24px; padding-top: 18px; }
+.benchmark-report h3 { color: #fff; margin: 0 0 12px; font-size: 18px; }
+.benchmark-report .secondary { margin-top: 16px; }
+.benchmark-table-wrap { overflow-x: auto; }
+.benchmark-table-wrap table { width: 100%; border-collapse: collapse; white-space: nowrap; font-size: 11px; }
+.benchmark-table-wrap th, .benchmark-table-wrap td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #333; }
+.benchmark-table-wrap th { color: #fff; }
+.benchmark-failures { color: #ccc; font-size: 12px; }
+.benchmark-report .sources { margin-top: 8px; }
+.benchmark-report .sources-content p { margin: 8px 0; font-size: 11px; }
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
