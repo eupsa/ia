@@ -70,6 +70,8 @@ A concorrência aumenta **até o primeiro nível com mais de 5% de erros ou p95 
 
 O painel mostra TTFT (tempo até o primeiro token), latência total p50/p95, solicitações/s, tokens/s, entrada e saída em tokens, taxa de erro e amostras individuais. A contagem e a duração de geração vêm do Ollama. Erros HTTP 409 aparecem no total de falhas e ficam fora dos percentis das respostas bem-sucedidas. Com 2–5 amostras por cenário, os percentis são **exploratórios**; repita o diagnóstico em horários e condições diferentes para planejamento de capacidade.
 
+O **parecer final** resume se a instalação é viável para uso leve, o limite de chamadas curtas simultâneas, uma estimativa conservadora de requisições por minuto por tipo de resposta, tamanho sugerido de fila e timeout de cliente. **A fila não está implementada na API atual**; veja as [fórmulas e limites dessas estimativas](docs/benchmark.md).
+
 Os [relatórios locais de referência](reports/) foram medidos no Docker Desktop em Windows x64 com Qwen3 0.6B. **Não representam a VM Oracle.** Na VM ARM64, execute o diagnóstico no painel depois da instalação para obter os números daquela máquina.
 
 A metodologia usa as definições de [TTFT e throughput da NVIDIA](https://docs.nvidia.com/enterprise-reference-architectures/enterprise-rag-retrieval-scaling-and-sizing-guide/latest/rag-benchmarking-methodology.html), [aquecimento e entradas determinísticas](https://docs.nvidia.com/aicr/latest/user-guide/validation/) e as [métricas de execução do Ollama](https://docs.ollama.com/api/chat).

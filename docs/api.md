@@ -71,6 +71,8 @@ Aceita `.txt` e `.md` UTF-8, nome de até 160 caracteres, texto de até 200.000 
 
 `POST /api/benchmarks` retorna HTTP 202 e um `id` imediatamente. Consulte `GET /api/benchmarks/:id` até `status` ser `done` ou `error`. O teste usa chamadas reais ao endpoint de mensagens, salva etapas no SQLite e continua se o cliente desconectar. [Cenários e interpretação das métricas](benchmark.md).
 
+Em um diagnóstico automático concluído, `verdict` contém `status` (`viable`, `limited` ou `inconclusive`), `headline`, `summary`, `concurrent_requests`, `request_rates` e `queue`. Cada item de `request_rates` traz `p95_ms`, `measured_rpm` e `planning_rpm`. `queue.implemented` é `false`: `recommended_pending`, `estimated_max_wait_s` e `client_timeout_s` são recomendações de planejamento, não uma fila ativa. Os relatórios anteriores são enriquecidos com esse parecer quando o backend é iniciado.
+
 ## Respostas de erro
 
 Erros antes do início do stream retornam JSON `{"error":"mensagem"}`. Depois do início, um erro aparece como uma linha NDJSON `{"error":"mensagem"}`. Trate ambos.

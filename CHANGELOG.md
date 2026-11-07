@@ -2,6 +2,16 @@
 
 Este projeto usa tags para marcar etapas verificáveis. As datas abaixo seguem o horário de America/Bahia.
 
+## v0.17.0 — documentação do parecer · 7 nov. 2026
+
+- Critérios de viabilidade, fórmulas de requisições por minuto, fila e timeout documentados.
+- Guias da interface e da API atualizados para os novos campos do relatório.
+
+## v0.16.0 — parecer final do diagnóstico · 7 nov. 2026
+
+- Relatório com avaliação de viabilidade, concorrência e ritmo sugerido por cenário.
+- Sugestão explícita de fila e timeout, com fórmulas e limitações documentadas.
+
 ## v0.15.0 — guia da interface · 7 nov. 2026
 
 - Documentação de todas as áreas, painéis e controles do site, incluindo estados, dados salvos e erros comuns.
