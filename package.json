@@ -1,0 +1,14 @@
+{
+  "name": "local-chat",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "npm run build -w frontend",
+    "test": "npm test -w backend",
+    "dev": "npm run dev -w frontend"
+  }
+}
