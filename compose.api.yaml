@@ -1,0 +1,25 @@
+# Uso: docker compose -f compose.yaml -f compose.api.yaml up -d --build ollama search backend gateway
+services:
+  backend:
+    environment:
+      API_KEY: ${API_KEY:?Defina API_KEY no arquivo .env}
+    ports:
+      - 127.0.0.1:3000:3000
+  gateway:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      DOMAIN: ${DOMAIN:?Defina DOMAIN no arquivo .env}
+    volumes:
+      - ./deploy/Caddyfile.api:/etc/caddy/Caddyfile:ro
+      - caddy_api_data:/data
+      - caddy_api_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+volumes:
+  caddy_api_data:
+  caddy_api_config:

@@ -6,6 +6,8 @@ import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { knowledge, toolDefinitions, runTool } from "./knowledge.js";
 import { searchWeb, needsLiveData } from "./web.js";
+import { createBenchmark } from './benchmark.js';
+import { timingSafeEqual } from 'node:crypto';
 
 export const catalog = [
   {
@@ -34,6 +36,14 @@ export function createApp({
   const app = express();
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
+  const apiKey = process.env.API_KEY || '';
+  if (apiKey) app.use((req, res, next) => {
+    if (req.path === '/api/health') return next();
+    const provided = req.headers.authorization?.replace(/^Bearer /i, '') || '';
+    const a = Buffer.from(provided), b = Buffer.from(apiKey);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return res.status(401).json({ error: 'Chave de API inválida.' });
+    next();
+  });
   app.use((req, res, next) => {
     // Browser writes must originate from the same site (also behind the production proxy).
     if (
@@ -83,6 +93,7 @@ export function createApp({
     res.status(204).end();
   });
   const known = (id) => catalog.some((m) => m.id === id);
+  const benchmark = createBenchmark({ fetcher, apiKey, installed: known });
   const call = (path, options = {}) =>
     fetcher(`${ollama}${path}`, {
       ...options,
@@ -118,6 +129,19 @@ export function createApp({
     } catch {
       res.status(503).json({ status: "unavailable", ollama: false, busy });
     }
+  });
+  app.post('/api/benchmarks', async (req, res) => {
+    try {
+      if (busy || downloading) return res.status(409).json({ error: 'Aguarde a operação atual terminar antes do teste.' });
+      const models = await listModels();
+      if (!models.find(m => m.id === req.body.model)?.installed) return res.status(400).json({ error: 'Baixe o modelo antes do teste.' });
+      res.status(202).json(benchmark.start(req.body));
+    } catch (error) { res.status(409).json({ error: error.message }); }
+  });
+  app.get('/api/benchmarks/:id', (req, res) => {
+    const job = benchmark.get(req.params.id);
+    if (!job) return res.status(404).json({ error: 'Teste não encontrado.' });
+    res.json(job);
   });
   app.get("/api/models", async (req, res) => {
     try {
@@ -380,6 +404,7 @@ export function createApp({
           if (webError) emit({ notice: webError });
         }
         let done = false;
+        let evalCount = null;
         let roundAnswer = "";
         const calls = [];
         for await (const item of ndjson(response.body)) {
@@ -390,6 +415,7 @@ export function createApp({
           if (item.message?.tool_calls) calls.push(...item.message.tool_calls);
           if (token) emit({ token });
           if (item.done) {
+            evalCount = item.eval_count ?? null;
             done = true;
             break;
           }
@@ -399,7 +425,7 @@ export function createApp({
             "Resposta interrompida. Envie uma nova mensagem para continuar.",
           );
         if (!calls.length) {
-          emit({ done: true });
+          emit({ done: true, eval_count: evalCount });
           break;
         }
         if (round === 3 || req.body.tools === false)

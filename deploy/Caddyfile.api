@@ -1,0 +1,9 @@
+{$DOMAIN} {
+    @api path /api/*
+    handle @api {
+        reverse_proxy backend:3000 {
+            flush_interval -1
+        }
+    }
+    respond "API only" 404
+}
