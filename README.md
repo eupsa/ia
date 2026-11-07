@@ -5,10 +5,14 @@
 [![Node.js 24](https://img.shields.io/badge/Node.js-24-202020?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-202020?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![Qwen3](https://img.shields.io/badge/Modelos-Qwen3-202020)](https://ollama.com/library/qwen3)
+[![MIT](https://img.shields.io/badge/Licença-MIT-202020)](LICENSE)
+[![CI](https://github.com/eupsa/ia/actions/workflows/ci.yml/badge.svg)](https://github.com/eupsa/ia/actions/workflows/ci.yml)
 
 Frontend em português com visual preto e branco, API própria, histórico persistente, busca em documentos, ferramentas locais e pesquisa na internet. O usuário baixa pelo painel apenas o modelo que quer usar. Um diagnóstico de carga executado no próprio site mede latência, vazão e concorrência com inferência real.
 
 > **Estado do projeto:** aplicação pessoal ou para um grupo de confiança. A API pode ser publicada com HTTPS e chave Bearer; todos os clientes com a mesma chave compartilham dados. Não há contas individuais nem isolamento por cliente.
+
+**Guias:** [instalação e operação](docs/deployment.md) · [referência da API](docs/api.md) · [metodologia do benchmark](docs/benchmark.md) · [como contribuir](CONTRIBUTING.md) · [segurança](SECURITY.md) · [histórico de versões](CHANGELOG.md).
 
 ## O que há aqui
 
@@ -86,10 +90,11 @@ ssh -L 8080:127.0.0.1:8080 ubuntu@IP_PUBLICO_DA_VM
 
 Abra `http://localhost:8080`. A porta 8080 não precisa ficar pública.
 
-**Site com HTTPS e senha:** aponte um domínio para a VM; libere TCP 80 e 443 na Oracle VCN e no firewall do sistema. Copie `.env.example` para `.env`, configure `DOMAIN`, `AUTH_USER` e `AUTH_PASSWORD_HASH`. Gere o hash interativamente:
+**Site com HTTPS e senha:** aponte um domínio para a VM; libere TCP 80 e 443 na Oracle VCN e no firewall do sistema. Copie `.env.example` para `.env`, configure `DOMAIN`, `AUTH_USER`, `AUTH_PASSWORD_HASH` e `SEARXNG_SECRET`. Gere o hash interativamente e um segredo aleatório para o SearXNG:
 
 ```bash
 docker run --rm -it caddy:2.10-alpine caddy hash-password
+openssl rand -hex 32
 docker compose -f compose.yaml -f compose.prod.yaml up -d --build
 ```
 
@@ -97,7 +102,7 @@ Cole o hash entre aspas simples em `.env` para preservar `$`. O Caddy emite HTTP
 
 ## API sem frontend
 
-Para integração entre sistemas, use `compose.api.yaml`. Configure em `.env` um `DOMAIN=api.seudominio.com` apontado para a VM e uma `API_KEY` aleatória (`openssl rand -hex 32`). Libere 80/443. Em uma VM já executando o site, faça `docker compose down` primeiro; os volumes permanecem.
+Para integração entre sistemas, use `compose.api.yaml`. Configure em `.env` um `DOMAIN=api.seudominio.com` apontado para a VM, uma `API_KEY` aleatória e um `SEARXNG_SECRET` diferente (gere cada um com `openssl rand -hex 32`). Libere 80/443. Em uma VM já executando o site, faça `docker compose down` primeiro; os volumes permanecem.
 
 ```bash
 docker compose -f compose.yaml -f compose.api.yaml up -d --build ollama search backend gateway
@@ -123,7 +128,8 @@ compose.prod.yaml    Site com Caddy e autenticação
 compose.api.yaml     API somente, com Bearer e HTTPS
 deploy/              Configuração de Caddy e SearXNG
 reports/             Medições locais reproduzíveis
-docs/                Metodologia do diagnóstico
+docs/                Guias da API, implantação e diagnóstico
+.github/workflows/   CI: testes e build em pushes e pull requests
 scripts/             Cliente de benchmark para linha de comando
 ```
 
@@ -156,3 +162,7 @@ Os testes automatizados simulam respostas do Ollama para validar a API; o diagn�
 - Os resultados locais não devem ser tratados como estimativa de capacidade da VM Oracle.
 
 Para entender os modelos e componentes usados: [Ollama Docker](https://docs.ollama.com/docker), [Qwen3 0.6B](https://ollama.com/library/qwen3:0.6b), [Qwen3 1.7B](https://ollama.com/library/qwen3:1.7b), [SQLite FTS5](https://sqlite.org/fts5.html) e [SearXNG Search API](https://docs.searxng.org/dev/search_api.html).
+
+## Licença
+
+O código deste repositório é distribuído sob a [licença MIT](LICENSE). Os modelos Qwen3, o Ollama, o SearXNG e as imagens Docker são projetos de terceiros com licenças próprias; consulte suas páginas antes de redistribuí-los.
