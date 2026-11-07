@@ -2,6 +2,10 @@
 
 Este projeto usa tags para marcar etapas verificáveis. As datas abaixo seguem o horário de America/Bahia.
 
+## v0.18.0 — endereço do repositório · 7 nov. 2026
+
+- Links e comandos de instalação atualizados para `eupsa/local-chat-ia`.
+
 ## v0.17.0 — documentação do parecer · 7 nov. 2026
 
 - Critérios de viabilidade, fórmulas de requisições por minuto, fila e timeout documentados.

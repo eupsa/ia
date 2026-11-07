@@ -7,7 +7,7 @@ O projeto tem três modos: **localhost**, **site HTTPS** e **API HTTPS sem front
 Instale Docker Engine/Desktop com Compose 2.24.4 ou superior. No Windows, use containers Linux. Depois:
 
 ```bash
-git clone https://github.com/eupsa/ia.git
+git clone https://github.com/eupsa/local-chat-ia.git
 cd ia
 docker compose up -d --build
 docker compose ps

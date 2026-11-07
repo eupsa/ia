@@ -6,7 +6,7 @@
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-202020?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![Qwen3](https://img.shields.io/badge/Modelos-Qwen3-202020)](https://ollama.com/library/qwen3)
 [![MIT](https://img.shields.io/badge/Licença-MIT-202020)](LICENSE)
-[![CI](https://github.com/eupsa/ia/actions/workflows/ci.yml/badge.svg)](https://github.com/eupsa/ia/actions/workflows/ci.yml)
+[![CI](https://github.com/eupsa/local-chat-ia/actions/workflows/ci.yml/badge.svg)](https://github.com/eupsa/local-chat-ia/actions/workflows/ci.yml)
 
 Frontend em português com visual preto e branco, API própria, histórico persistente, busca em documentos, ferramentas locais e pesquisa na internet. O usuário baixa pelo painel apenas o modelo que quer usar. Um diagnóstico de carga executado no próprio site mede latência, vazão e concorrência com inferência real.
 
@@ -40,7 +40,7 @@ flowchart LR
 Pré-requisitos: Docker Desktop ou Docker Engine com Compose 2.24.4+, containers Linux e memória disponível para o modelo.
 
 ```bash
-git clone https://github.com/eupsa/ia.git
+git clone https://github.com/eupsa/local-chat-ia.git
 cd ia
 docker compose up -d --build
 ```
