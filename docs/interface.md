@@ -82,6 +82,8 @@ Clique em **Executar diagnóstico automático** uma vez. O botão fica indispon�
 
 Durante a execução, **Etapa atual** mostra o cenário em andamento. No resultado, **Aquecimento** indica a primeira chamada; a recomendação resume a concorrência que passou nos critérios. A tabela contém cenário, chamadas simultâneas, sucessos, erros, tokens de entrada/saída, tempo até o primeiro token (**TTFT**), latência total, respostas/s e tokens/s. Clique em **amostras individuais** para ver cada requisição e seu código HTTP. **Baixar JSON** exporta o relatório completo.
 
+Na tabela, `n/d` significa que o modelo ou a requisição não forneceu aquela medida.
+
 O bloco **Parecer final** informa se o modelo respondeu de forma viável nesta instalação, quantas chamadas curtas simultâneas passaram, o ritmo sugerido de requisições por minuto para cada tamanho de resposta, quantas posições de fila cabem em até 30 segundos de espera estimada e um timeout de cliente. A fila é **uma sugestão de arquitetura**: a API ainda não a implementa. Os números são estimativas com 30% de folga, não promessas para outro computador ou outra carga.
 
 HTTP 409 indica que outra geração já ocupava a capacidade disponível; essas falhas contam na taxa de erro, mas ficam fora dos percentis de respostas concluídas. Veja [o plano exato e como interpretar os números](benchmark.md). Os [relatórios incluídos no repositório](../reports/) são exemplos medidos localmente e não estimam o desempenho da VM Oracle.

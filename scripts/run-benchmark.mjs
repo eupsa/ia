@@ -15,7 +15,7 @@ while (['pending','running'].includes(job.status)) {
   const response = await fetch(`${base}/api/benchmarks/${job.id}`, { headers });
   if (!response.ok) throw Error(`Não foi possível consultar: HTTP ${response.status}`);
   job = await response.json();
-  console.log(`Estado: ${job.status}; etapa: ${job.current_stage || '—'}; cenários concluídos: ${job.results.length}`);
+  console.log(`Estado: ${job.status}; etapa: ${job.current_stage || 'nenhuma'}; cenários concluídos: ${job.results.length}`);
 }
 const report = { environment: { host_platform: os.platform(), host_arch: os.arch(), host_cpus: os.cpus().length, host_ram_gb: Math.round(os.totalmem()/1024**3), api_base: base, note: 'Medição no host atual; repetir na VM Oracle para dados de produção.' }, benchmark: job };
 mkdirSync('reports', { recursive: true });

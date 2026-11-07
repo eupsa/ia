@@ -1,6 +1,6 @@
 # Local Chat
 
-**Um chat com IA que roda no seu servidor — e mostra quanto ele realmente aguenta.**
+**Converse com uma IA local e meça a capacidade do seu servidor.**
 
 [![Node.js 24](https://img.shields.io/badge/Node.js-24-202020?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-202020?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
@@ -68,7 +68,7 @@ Veja a [metodologia completa e como interpretar as métricas](docs/benchmark.md)
 
 A concorrência aumenta **até o primeiro nível com mais de 5% de erros ou p95 acima do dobro da linha de base**. O relatório aponta o último nível que passou nesses critérios. Cada resposta usa temperatura `0` e semente `42`; RAG, ferramentas e internet ficam desligados para reduzir variações externas. O teste cria conversas temporárias e as apaga após cada etapa.
 
-O painel mostra TTFT (tempo até o primeiro token), latência total p50/p95, solicitações/s, tokens/s, entrada e saída em tokens, taxa de erro e amostras individuais. A contagem e a duração de geração vêm do Ollama. Erros HTTP 409 aparecem no total de falhas e ficam fora dos percentis das respostas bem-sucedidas. Com 2–5 amostras por cenário, os percentis são **exploratórios**; repita o diagnóstico em horários e condições diferentes para planejamento de capacidade.
+O painel mostra TTFT (tempo até o primeiro token), latência total p50/p95, solicitações/s, tokens/s, entrada e saída em tokens, taxa de erro e amostras individuais. A contagem e a duração de geração vêm do Ollama. Erros HTTP 409 aparecem no total de falhas e ficam fora dos percentis das respostas bem-sucedidas. Com 2 a 5 amostras por cenário, os percentis são **exploratórios**; repita o diagnóstico em horários e condições diferentes para planejamento de capacidade.
 
 O **parecer final** resume se a instalação é viável para uso leve, o limite de chamadas curtas simultâneas, uma estimativa conservadora de requisições por minuto por tipo de resposta, tamanho sugerido de fila e timeout de cliente. **A fila não está implementada na API atual**; veja as [fórmulas e limites dessas estimativas](docs/benchmark.md).
 
