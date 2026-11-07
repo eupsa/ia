@@ -379,7 +379,7 @@ export function createApp({
                 }),
             options: {
               num_ctx: 4096,
-              num_predict: 1024,
+              num_predict: req.body.benchmark === true && [128, 384, 768].includes(req.body.benchmark_max_tokens) ? req.body.benchmark_max_tokens : 1024,
               num_thread: 4,
               temperature: req.body.benchmark === true ? 0 : 0.7,
               ...(req.body.benchmark === true ? { seed: 42 } : {}),

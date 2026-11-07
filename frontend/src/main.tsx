@@ -51,8 +51,8 @@ type Message = {
 };
 type Document = { id: string; name: string };
 type BenchSample = { ok: boolean; status: number | null; duration_ms: number; first_token_ms: number | null; output_tokens: number | null; prompt_tokens?: number | null; model_tokens_per_second?: number | null; error: string | null };
-type BenchResult = { concurrency: number; attempts: number; successes: number; failures: number; error_rate_pct?: number; elapsed_s: number; requests_per_second: number; output_tokens_per_second?: number; model_tokens_per_second_p50?: number | null; latency_ms: { p50: number | null; p95: number | null; max: number | null }; first_token_ms: { p50: number | null; p95: number | null }; samples: BenchSample[] };
-type Benchmark = { id: string; status: string; model: string; profile: string; prompt: string; warmup?: BenchSample; results: BenchResult[]; error?: string };
+type BenchResult = { scenario?: string; label?: string; concurrency: number; attempts: number; successes: number; failures: number; error_rate_pct?: number; elapsed_s: number; requests_per_second: number; output_tokens_per_second?: number; model_tokens_per_second_p50?: number | null; prompt_tokens_p50?: number | null; output_tokens_p50?: number | null; latency_ms: { p50: number | null; p95: number | null; max: number | null }; first_token_ms: { p50: number | null; p95: number | null }; samples: BenchSample[] };
+type Benchmark = { id: string; status: string; model: string; profile: string; mode?: string; current_stage?: string; stable_concurrency?: number; recommendation?: string; prompt: string; warmup?: BenchSample; results: BenchResult[]; error?: string };
 type BenchmarkSummary = { id: string; status: string; model: string; profile: string; started?: string };
 async function api(path: string, init?: RequestInit) {
   const response = await fetch("/api" + path, {
@@ -114,8 +114,6 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [panel, setPanel] = useState<"models" | "documents" | "benchmark" | null>(null);
-  const [benchProfile, setBenchProfile] = useState<'short'|'medium'|'long'>('short');
-  const [benchRepetitions, setBenchRepetitions] = useState(5);
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
   const [benchHistory, setBenchHistory] = useState<BenchmarkSummary[]>([]);
   const [sidebar, setSidebar] = useState(false);
@@ -301,7 +299,7 @@ function App() {
     }
   }
   async function startBenchmark() {
-    try { setError(''); const job=await api('/benchmarks', post({ model, profile: benchProfile, repetitions: benchRepetitions, concurrency: [1,2,4] })); setBenchmark(job); setBenchHistory(await api('/benchmarks')); }
+    try { setError(''); const job=await api('/benchmarks', post({ model, mode: 'auto' })); setBenchmark(job); setBenchHistory(await api('/benchmarks')); }
     catch (e) { setError((e as Error).message); }
   }
   async function upload(files: FileList | null) {
@@ -699,21 +697,19 @@ function App() {
         ) : panel === 'benchmark' ? (
           <div className="benchmark-panel">
             <p><strong>Modelo:</strong> {selected?.name || model}. O teste usa o mesmo endpoint das conversas, sem RAG, internet ou ferramentas.</p>
-            <div className="benchmark-options" role="group" aria-label="Tamanho da resposta">
-              {(['short','medium','long'] as const).map((profile) => <button key={profile} type="button" className={benchProfile === profile ? 'enabled' : ''} aria-pressed={benchProfile === profile} onClick={() => setBenchProfile(profile)}>{ { short: 'Curta', medium: 'Média', long: 'Longa' }[profile]}</button>)}
-            </div>
-            <p className="benchmark-prompt">“{ {short:'Em uma frase, explique o que é uma API REST.',medium:'Explique em três tópicos como proteger uma API REST...',long:'Escreva cerca de 150 palavras sobre como estruturar uma API...'}[benchProfile]}”</p>
-            <div className="benchmark-options" role="group" aria-label="Rodadas por nível">{[3,5,10].map(n => <button key={n} type="button" className={benchRepetitions===n?'enabled':''} aria-pressed={benchRepetitions===n} onClick={() => setBenchRepetitions(n)}>{n} rodadas</button>)}</div>
-            <p className="benchmark-method">1 aquecimento + {benchRepetitions} rodadas nos níveis 1, 2 e 4. Total: {1+benchRepetitions*7} requisições. As conversas temporárias são apagadas. Temperatura 0 e semente fixa.</p>
-            <button className="primary" disabled={!selected?.installed || benchmark?.status === 'running' || benchmark?.status === 'pending'} onClick={startBenchmark}><Activity size={16}/>Iniciar teste real</button>
-            {benchHistory.length > 0 && <div className="benchmark-history"><strong>Resultados salvos</strong>{benchHistory.map(item => <button key={item.id} type="button" className={benchmark?.id===item.id?'active':''} onClick={() => api('/benchmarks/'+item.id).then(setBenchmark).catch(e=>setError(e.message))}>{item.model} · {({short:'curto',medium:'médio',long:'longo'} as Record<string,string>)[item.profile] || item.profile} · {item.started ? new Date(item.started).toLocaleString('pt-BR') : 'iniciado'} · {({running:'em andamento',done:'concluído',error:'falhou',pending:'pendente'} as Record<string,string>)[item.status] || item.status}</button>)}</div>}
+            <div className="benchmark-plan"><div><strong>1</strong><span>Latência</span><small>Respostas curta, média e longa</small></div><div><strong>2</strong><span>Contexto</span><small>Entrada extensa com saída curta</small></div><div><strong>3</strong><span>Capacidade</span><small>Concorrência cresce até o primeiro limite</small></div></div>
+            <p className="benchmark-method">Parâmetros automáticos: aquecimento fora das medições; 5, 3 e 2 rodadas para as respostas curta, média e longa; 3 para contexto; até 5 rodadas por nível de concorrência. Temperatura 0, semente fixa e limites de saída por cenário. O teste para de aumentar a concorrência após erros ou p95 acima de 2× a linha de base.</p>
+            <button className="primary" disabled={!selected?.installed || benchmark?.status === 'running' || benchmark?.status === 'pending'} onClick={startBenchmark}><Activity size={16}/>Executar diagnóstico automático</button>
+            {benchHistory.length > 0 && <div className="benchmark-history"><strong>Resultados salvos</strong>{benchHistory.map(item => <button key={item.id} type="button" className={benchmark?.id===item.id?'active':''} onClick={() => api('/benchmarks/'+item.id).then(setBenchmark).catch(e=>setError(e.message))}>{item.model} · {item.profile === 'auto' ? 'diagnóstico' : ({short:'curto',medium:'médio',long:'longo'} as Record<string,string>)[item.profile] || item.profile} · {item.started ? new Date(item.started).toLocaleString('pt-BR') : 'iniciado'} · {({running:'em andamento',done:'concluído',error:'falhou',pending:'pendente'} as Record<string,string>)[item.status] || item.status}</button>)}</div>}
             {benchmark && <div className="benchmark-report" aria-live="polite">
               <h3>{benchmark.status === 'done' ? 'Resultado' : benchmark.status === 'error' ? 'Falha no teste' : 'Teste em andamento…'}</h3>
               {benchmark.error && <p role="alert">{benchmark.error}</p>}
+              {benchmark.current_stage && benchmark.status === 'running' && <p>Etapa atual: {benchmark.current_stage}</p>}
               {benchmark.warmup && <p>Aquecimento: {benchmark.warmup.ok ? `${benchmark.warmup.duration_ms} ms` : benchmark.warmup.error}</p>}
-              {!!benchmark.results.length && <div className="benchmark-table-wrap"><table><thead><tr><th>Simultâneas</th><th>Sucesso</th><th>Erros</th><th>TTFT p50/p95</th><th>Total p50/p95</th><th>Resp./s</th><th>Tokens/s</th></tr></thead><tbody>{benchmark.results.map(row => <tr key={row.concurrency}><td>{row.concurrency}</td><td>{row.successes}/{row.attempts}</td><td>{row.error_rate_pct ?? Math.round(row.failures/row.attempts*100)}%</td><td>{row.first_token_ms.p50 ?? '—'} / {row.first_token_ms.p95 ?? '—'} ms</td><td>{row.latency_ms.p50 ?? '—'} / {row.latency_ms.p95 ?? '—'} ms</td><td>{row.requests_per_second}</td><td>{row.output_tokens_per_second ?? '—'}</td></tr>)}</tbody></table></div>}
+              {benchmark.recommendation && <p className="benchmark-recommendation">{benchmark.recommendation}</p>}
+              {!!benchmark.results.length && <div className="benchmark-table-wrap"><table><thead><tr><th>Cenário</th><th>Simultâneas</th><th>Sucesso</th><th>Erros</th><th>Entrada/saída</th><th>TTFT p50/p95</th><th>Total p50/p95</th><th>Resp./s</th><th>Tokens/s</th></tr></thead><tbody>{benchmark.results.map((row,index) => <tr key={`${row.scenario || index}-${row.concurrency}`}><td>{row.label || row.scenario || 'Resposta'}</td><td>{row.concurrency}</td><td>{row.successes}/{row.attempts}</td><td>{row.error_rate_pct ?? Math.round(row.failures/row.attempts*100)}%</td><td>{row.prompt_tokens_p50 ?? '—'} / {row.output_tokens_p50 ?? '—'}</td><td>{row.first_token_ms.p50 ?? '—'} / {row.first_token_ms.p95 ?? '—'} ms</td><td>{row.latency_ms.p50 ?? '—'} / {row.latency_ms.p95 ?? '—'} ms</td><td>{row.requests_per_second}</td><td>{row.output_tokens_per_second ?? '—'}</td></tr>)}</tbody></table></div>}
               {benchmark.results.some(row => row.failures > 0) && <p className="benchmark-failures">HTTP 409 indica chamadas recusadas durante outra geração. As falhas não entram nos percentis.</p>}
-              {benchmark.results.map(row => <SourceList key={row.concurrency} label={`${row.concurrency} simultânea(s): amostras individuais`}>{row.samples.map((sample,i) => <p key={i}>#{i+1} · HTTP {sample.status ?? 'rede'} · {sample.duration_ms} ms · {sample.output_tokens ?? '—'} tokens · {sample.model_tokens_per_second ?? '—'} tokens/s do modelo {sample.error ? `· ${sample.error}` : ''}</p>)}</SourceList>)}
+              {benchmark.results.map((row,index) => <SourceList key={`${row.scenario || index}-${row.concurrency}`} label={`${row.label || row.scenario || 'Resposta'}: amostras individuais`}>{row.samples.map((sample,i) => <p key={i}>#{i+1} · HTTP {sample.status ?? 'rede'} · {sample.duration_ms} ms · {sample.output_tokens ?? '—'} tokens · {sample.model_tokens_per_second ?? '—'} tokens/s do modelo {sample.error ? `· ${sample.error}` : ''}</p>)}</SourceList>)}
               {benchmark.status === 'done' && <button className="secondary" onClick={() => { const blob = new Blob([JSON.stringify(benchmark,null,2)], {type:'application/json'}); const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.href=url; link.download=`benchmark-${benchmark.model.replace(':','-')}.json`; link.click(); URL.revokeObjectURL(url); }}>Baixar JSON</button>}
             </div>}
           </div>
