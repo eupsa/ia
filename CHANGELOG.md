@@ -2,6 +2,11 @@
 
 Este projeto usa tags para marcar etapas verificáveis. As datas abaixo seguem o horário de America/Bahia.
 
+## v0.14.0 — CI atualizada · 7 nov. 2026
+
+- Ações oficiais do GitHub atualizadas para o runtime Node.js 24.
+- Permissão do workflow limitada a leitura do repositório.
+
 ## v0.13.0 — documentação para código aberto · 7 nov. 2026
 
 - Licença MIT, referência da API, guia de implantação, contribuição e segurança.
