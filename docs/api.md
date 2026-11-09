@@ -37,7 +37,7 @@ Os campos de contagem e duração vêm do Ollama e podem ser `null`. Eventos `to
 | Método e caminho | Finalidade | Entrada / observação |
 | --- | --- | --- |
 | `GET /api/health` | Saúde da API e do Ollama | Público; retorna `status`, `ollama`, `busy` |
-| `GET /api/models` | Lista modelos permitidos, instalação e download | Qwen3 0.6B e 1.7B |
+| `GET /api/models` | Lista modelos permitidos, instalação e download | SmolLM2 135M, Gemma 3 270M, Qwen2.5 0.5B, Qwen3 0.6B e 1.7B |
 | `POST /api/models/pull` | Inicia download assíncrono | `{"model":"qwen3:0.6b"}`; acompanhe em `GET /api/models` |
 | `GET /api/chats` | Lista conversas | Mais recentes primeiro |
 | `POST /api/chats` | Cria conversa | Corpo opcional `{}`; retorna `id` |
@@ -55,7 +55,7 @@ Os campos de contagem e duração vêm do Ollama e podem ser `null`. Eventos `to
 
 | Campo | Tipo | Comportamento |
 | --- | --- | --- |
-| `model` | string, obrigatório | `qwen3:0.6b` ou `qwen3:1.7b`, já instalado |
+| `model` | string, obrigatório | Id de `GET /api/models` já instalado, como `qwen3:0.6b` ou `gemma3:270m` |
 | `content` | string, obrigatório | 1 a 8.000 caracteres |
 | `rag` | boolean | `false` desliga a recuperação de documentos; omitido liga |
 | `tools` | boolean | `false` desliga as ferramentas; omitido liga |

@@ -9,7 +9,7 @@ async function fixture(t, responder) {
     dbPath: ":memory:",
     fetcher: async (url, options) => {
       if (url.endsWith("/api/tags"))
-        return Response.json({ models: [{ name: "qwen3:0.6b" }] });
+        return Response.json({ models: [{ name: "qwen3:0.6b" }, { name: "gemma3:270m" }] });
       const body = JSON.parse(options.body);
       calls.push(body);
       return responder
@@ -149,6 +149,12 @@ test("tools and RAG can be disabled; unsupported models and documents rejected",
   })).text();
   assert.deepEqual(calls[1].tools.map(tool => tool.function.name).sort(), ['calculator', 'current_time']);
 });
+test("models without tool support never receive tools", async (t) => {
+  const { request, calls } = await fixture(t);
+  const chat = await (await request("/chats", {})).json();
+  await (await request(`/chats/${chat.id}/messages`, { content: "Olá", model: "gemma3:270m" })).text();
+  assert.equal(calls[0].tools, undefined);
+});
 test("download progress reaches completion independently from polling browser", async (t) => {
   const { request } = await fixture(
     t,
@@ -162,7 +168,7 @@ test("download progress reaches completion independently from polling browser", 
     202,
   );
   const models = await (await request("/models")).json();
-  assert.equal(models[1].download.status, "done");
+  assert.equal(models.find((m) => m.id === "qwen3:1.7b").download.status, "done");
 });
 test("Ollama failures produce actionable errors without fake assistant messages", async (t) => {
   const { request } = await fixture(

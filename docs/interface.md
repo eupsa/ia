@@ -55,7 +55,7 @@ Em telas pequenas, o botão de menu na barra superior abre a barra lateral. Toqu
 
 ## Painel “Meus modelos”
 
-O painel apresenta **Qwen3 0.6B** (mais leve) e **Qwen3 1.7B** (maior), com tamanho aproximado de download e descrição. Cada cartão mostra um dos estados:
+O painel apresenta **SmolLM2 135M**, **Gemma 3 270M** e **Qwen2.5 0.5B** (os mais leves), **Qwen3 0.6B** e **Qwen3 1.7B** (maior), com tamanho aproximado de download e descrição. Cada cartão mostra um dos estados:
 
 - **Baixar modelo:** inicia o download no Ollama. A barra indica o progresso; fechar o painel não cancela o download.
 - **Usar modelo:** seleciona um modelo já instalado para as próximas mensagens.

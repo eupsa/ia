@@ -9,7 +9,28 @@ import { searchWeb, needsLiveData } from "./web.js";
 import { createBenchmark } from './benchmark.js';
 import { timingSafeEqual } from 'node:crypto';
 
+// tools:false = modelo sem suporte a ferramentas no Ollama; o contexto de RAG e web ainda é injetado.
 export const catalog = [
+  {
+    id: "smollm2:135m",
+    name: "SmolLM2 135M",
+    size: "271 MB",
+    description: "Minúsculo, para CPUs muito limitadas. Respostas simples.",
+    tools: false,
+  },
+  {
+    id: "gemma3:270m",
+    name: "Gemma 3 270M",
+    size: "292 MB",
+    description: "Muito leve e razoável em português, sem ferramentas.",
+    tools: false,
+  },
+  {
+    id: "qwen2.5:0.5b",
+    name: "Qwen2.5 0.5B",
+    size: "398 MB",
+    description: "Menor que o Qwen3 0.6B, mantém o uso de ferramentas.",
+  },
   {
     id: "qwen3:0.6b",
     name: "Qwen3 0.6B",
@@ -366,7 +387,7 @@ export function createApp({
             think: false,
             keep_alive: "5m",
             messages,
-            ...(req.body.tools === false || round === 3
+            ...(req.body.tools === false || round === 3 || catalog.find((m) => m.id === model)?.tools === false
               ? {}
               : {
                   tools: toolDefinitions.filter(

@@ -19,7 +19,7 @@ Frontend em português com visual preto e branco, API própria, histórico persi
 | Área | Recursos |
 | --- | --- |
 | Chat | Streaming, Markdown, histórico, copiar resposta, interromper geração |
-| Modelos | Qwen3 0.6B e 1.7B via Ollama; download e seleção no painel |
+| Modelos | SmolLM2 135M, Gemma 3 270M, Qwen2.5 0.5B, Qwen3 0.6B e 1.7B via Ollama; download e seleção no painel. SmolLM2 e Gemma 3 270M não usam ferramentas (calculadora, busca), mas ainda recebem documentos e resultados da web no contexto |
 | Conhecimento | Arquivos `.txt`/`.md`, busca local SQLite FTS5, trechos consultados na resposta |
 | Ferramentas | Calculadora, data/hora, lista e busca de documentos, pesquisa web |
 | Internet | SearXNG interno; resultados com links, controle no campo de mensagem |
