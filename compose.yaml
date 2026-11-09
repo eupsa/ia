@@ -12,7 +12,7 @@ services:
       OLLAMA_MAX_QUEUE: 4
     volumes:
       - models:/root/.ollama
-    cpus: 3.5
+    cpus: 2
     mem_limit: 8g
     healthcheck:
       test: [CMD, ollama, list]
@@ -48,7 +48,7 @@ services:
       dockerfile: frontend/Dockerfile
     restart: unless-stopped
     ports:
-      - 127.0.0.1:8080:80
+      - 127.0.0.1:8081:80
     cpus: 0.25
     mem_limit: 128m
     depends_on:
